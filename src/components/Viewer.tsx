@@ -39,7 +39,6 @@ interface ViewerProps {
   showSinusoidalGrid: boolean
   gridRotation: number
   gridDensity: number
-  gridFov: number
   sectorOpacity: number
   sectorColors: {
     front: string
@@ -549,7 +548,6 @@ const Viewer = forwardRef<ViewerRef, ViewerProps>(({
   showSinusoidalGrid,
   gridRotation,
   gridDensity,
-  gridFov,
   sectorOpacity,
   sectorColors,
   polarColors,
@@ -663,7 +661,6 @@ const Viewer = forwardRef<ViewerRef, ViewerProps>(({
             visible={true} 
             rotationOffset={gridRotation} 
             lineDensity={gridDensity}
-            fov={gridFov}
             sectorOpacity={sectorOpacity}
             sectorColors={sectorColors}
             polarColors={polarColors}

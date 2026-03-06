@@ -5,7 +5,6 @@ interface EquirectangularGridProps {
   visible: boolean
   rotationOffset: number
   lineDensity?: number
-  fov?: number
   color?: string
   sectorOpacity?: number
   sectorColors?: {
@@ -24,7 +23,6 @@ const EquirectangularGrid = ({
   visible,
   rotationOffset = 0,
   lineDensity = 8,
-  fov = 90,
   color = '#00ff88',
   sectorOpacity = 0.22,
   sectorColors = {
@@ -116,9 +114,8 @@ const EquirectangularGrid = ({
       }
     })
 
-    const fovRad = (fov * Math.PI) / 180
     const halfCount = Math.max(Math.floor(lineDensity / 2), 2)
-    const betaMax = fovRad / 2
+    const betaMax = Math.PI / 4 // Fixed to 90 degrees (PI/4 rads half-angle) to ensure perfect face coverage without gaps
     
     // Draw TOP and BOTTOM sectors following curved limits instead of straight lines.
     const topBoundary = new Float32Array(W)
@@ -393,7 +390,7 @@ const EquirectangularGrid = ({
     ctx.restore()
 
     texture.needsUpdate = true
-  }, [visible, rotationOffset, lineDensity, fov, color, texture, sectorOpacity, sectorColors, polarColors])
+  }, [visible, rotationOffset, lineDensity, color, texture, sectorOpacity, sectorColors, polarColors])
 
   if (!visible) return null
 

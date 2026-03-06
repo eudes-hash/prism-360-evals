@@ -20,7 +20,6 @@ function App() {
   const [showSinusoidalGrid, setShowSinusoidalGrid] = useState(true)
   const [gridRotation, setGridRotation] = useState(0)
   const [gridDensity, setGridDensity] = useState(8)
-  const [gridFov, setGridFov] = useState(90)
   const [sectorOpacity, setSectorOpacity] = useState(0.22)
   const [sectorColors, setSectorColors] = useState({
     front: '#2ecc71',
@@ -207,7 +206,6 @@ function App() {
           showSinusoidalGrid={showSinusoidalGrid}
           gridRotation={gridRotation}
           gridDensity={gridDensity}
-          gridFov={gridFov}
           sectorOpacity={sectorOpacity}
           sectorColors={sectorColors}
           polarColors={polarColors}
@@ -471,16 +469,6 @@ function App() {
                       step="1"
                       value={gridDensity}
                       onChange={(e) => setGridDensity(parseInt(e.target.value, 10))}
-                      style={{ width: '100%', accentColor: '#3b82f6' }}
-                    />
-                    <label style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>FOV: {gridFov}°</label>
-                    <input
-                      type="range"
-                      min="60"
-                      max="120"
-                      step="1"
-                      value={gridFov}
-                      onChange={(e) => setGridFov(parseInt(e.target.value, 10))}
                       style={{ width: '100%', accentColor: '#3b82f6' }}
                     />
                     {viewMode === 'equirectangular' && (
