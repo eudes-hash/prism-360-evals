@@ -210,12 +210,6 @@ const EquirectangularGrid = ({
     ctx.lineWidth = 1.15
     ctx.globalAlpha = 0.6
     
-    // Draw a meridian every X degrees
-    const meridianStep = 360 / (lineDensity * 4) // Adjust density
-    for (let lon = -180; lon < 180; lon += 10) { // Fixed step for now to match density
-       // Actually let's use the same density logic as before
-    }
-    
     // We can just iterate screen X and draw vertical lines
     // But we need to match the density of the other lines.
     // The other lines use `halfCount`.
