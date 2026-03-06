@@ -47,6 +47,10 @@ interface ViewerProps {
     back: string
     left: string
   }
+  polarColors: {
+    top: string
+    bottom: string
+  }
 }
 
 export interface ViewerRef {
@@ -530,6 +534,7 @@ const Viewer = forwardRef<ViewerRef, ViewerProps>(({
   gridFov,
   sectorOpacity,
   sectorColors,
+  polarColors,
 }, ref) => {
   const [texture, setTexture] = useState<THREE.Texture | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
@@ -634,11 +639,12 @@ const Viewer = forwardRef<ViewerRef, ViewerProps>(({
         {showSinusoidalGrid && (viewMode === 'flat' || viewMode === 'equirectangular') && (
           <EquirectangularGrid 
             visible={true} 
-            rotationOffset={gridRotation}
+            rotationOffset={gridRotation} 
             lineDensity={gridDensity}
             fov={gridFov}
             sectorOpacity={sectorOpacity}
             sectorColors={sectorColors}
+            polarColors={polarColors}
           />
         )}
       </Canvas>

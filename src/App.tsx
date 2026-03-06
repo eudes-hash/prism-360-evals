@@ -28,6 +28,10 @@ function App() {
     back: '#e74c3c',
     left: '#3498db',
   })
+  const [polarColors, setPolarColors] = useState({
+    top: '#8b5cf6',
+    bottom: '#0ea5e9',
+  })
   const [viewMode, setViewMode] = useState<ViewMode>('spherical')
   const [issues, setIssues] = useState<Issue[]>([])
   const [isLogging, setIsLogging] = useState(false)
@@ -128,6 +132,7 @@ function App() {
           gridFov={gridFov}
           sectorOpacity={sectorOpacity}
           sectorColors={sectorColors}
+          polarColors={polarColors}
         />
         
         {/* Overlay UI */}
@@ -201,12 +206,12 @@ function App() {
 
             {viewMode === 'spherical' && (
               <>
-                <button 
-                  onClick={() => setShowGrid(!showGrid)}
+              <button 
+                onClick={() => setShowGrid(!showGrid)}
                   style={{ background: showGrid ? '#16a34a' : '#4b5563', color: '#fff', border: 'none', padding: '10px 12px', borderRadius: 8, fontSize: 13, cursor: 'pointer' }}
-                >
-                  {showGrid ? 'Hide Grid' : 'Show Grid'}
-                </button>
+              >
+                {showGrid ? 'Hide Grid' : 'Show Grid'}
+              </button>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                   <button
                     onClick={handleZoomOut}
@@ -337,6 +342,24 @@ function App() {
                             </label>
                           ))}
                         </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                          {(['top', 'bottom'] as const).map((sector) => (
+                            <label
+                              key={sector}
+                              style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#d1d5db', textTransform: 'uppercase' }}
+                            >
+                              {sector}
+                              <input
+                                type="color"
+                                value={polarColors[sector]}
+                                onChange={(e) =>
+                                  setPolarColors((prev) => ({ ...prev, [sector]: e.target.value }))
+                                }
+                                style={{ width: 28, height: 20, border: 'none', background: 'transparent', padding: 0, cursor: 'pointer' }}
+                              />
+                            </label>
+                          ))}
+                        </div>
                       </>
                     )}
                   </div>
@@ -360,7 +383,7 @@ function App() {
                 Export Report ({issues.length})
               </button>
             )}
-            </div>
+          </div>
           )}
         </div>
 

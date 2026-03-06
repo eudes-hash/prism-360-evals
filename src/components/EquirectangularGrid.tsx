@@ -14,6 +14,10 @@ interface EquirectangularGridProps {
     back: string
     left: string
   }
+  polarColors?: {
+    top: string
+    bottom: string
+  }
 }
 
 const EquirectangularGrid = ({
@@ -28,6 +32,10 @@ const EquirectangularGrid = ({
     right: '#f39c12',
     back: '#e74c3c',
     left: '#3498db',
+  },
+  polarColors = {
+    top: '#8b5cf6',
+    bottom: '#0ea5e9',
   },
 }: EquirectangularGridProps) => {
   const texture = useMemo(() => {
@@ -108,15 +116,81 @@ const EquirectangularGrid = ({
       }
     })
 
-    // Top/bottom bands to visually separate polar regions.
-    ctx.fillStyle = 'rgba(10, 80, 66, 0.24)'
-    ctx.fillRect(0, 0, W, H * 0.18)
-    ctx.fillRect(0, H * 0.82, W, H * 0.18)
-
     const fovRad = (fov * Math.PI) / 180
     const halfCount = Math.max(Math.floor(lineDensity / 2), 2)
     const betaMax = fovRad / 2
     const gammaMax = Math.PI / 2 - 0.045
+
+    // Build curved top/bottom boundaries from the outermost grid curves.
+    const topBoundary = new Float32Array(W)
+    const bottomBoundary = new Float32Array(W)
+    topBoundary.fill(Number.POSITIVE_INFINITY)
+    bottomBoundary.fill(Number.NEGATIVE_INFINITY)
+
+    faceDefs.forEach((face) => {
+      const center = wrapPi(face.center + rotationOffset)
+
+      // Top boundary: outer positive-elevation curve.
+      for (let s = -220; s <= 220; s++) {
+        const beta = (s / 220) * betaMax
+        const u = Math.tan(beta)
+        const vTop = Math.tan(betaMax)
+        const dirTop = new THREE.Vector3(u, vTop, 1).normalize()
+        dirTop.applyAxisAngle(yAxis, center)
+        const lambdaTop = Math.atan2(dirTop.x, dirTop.z)
+        if (Math.abs(angularDiff(lambdaTop, center)) > Math.PI / 4 + 0.01) continue
+        const phiTop = Math.asin(Math.max(-1, Math.min(1, dirTop.y)))
+        const xTop = Math.floor(longitudeToX(lambdaTop))
+        const yTop = latitudeToY(phiTop)
+        if (xTop >= 0 && xTop < W && yTop < topBoundary[xTop]) topBoundary[xTop] = yTop
+      }
+
+      // Bottom boundary: outer negative-elevation curve.
+      for (let s = -220; s <= 220; s++) {
+        const beta = (s / 220) * betaMax
+        const u = Math.tan(beta)
+        const vBottom = Math.tan(-betaMax)
+        const dirBottom = new THREE.Vector3(u, vBottom, 1).normalize()
+        dirBottom.applyAxisAngle(yAxis, center)
+        const lambdaBottom = Math.atan2(dirBottom.x, dirBottom.z)
+        if (Math.abs(angularDiff(lambdaBottom, center)) > Math.PI / 4 + 0.01) continue
+        const phiBottom = Math.asin(Math.max(-1, Math.min(1, dirBottom.y)))
+        const xBottom = Math.floor(longitudeToX(lambdaBottom))
+        const yBottom = latitudeToY(phiBottom)
+        if (xBottom >= 0 && xBottom < W && yBottom > bottomBoundary[xBottom]) bottomBoundary[xBottom] = yBottom
+      }
+    })
+
+    // Fill sparse samples by propagating nearest known values.
+    for (let x = 1; x < W; x++) {
+      if (!Number.isFinite(topBoundary[x])) topBoundary[x] = topBoundary[x - 1]
+      if (!Number.isFinite(bottomBoundary[x])) bottomBoundary[x] = bottomBoundary[x - 1]
+    }
+    for (let x = W - 2; x >= 0; x--) {
+      if (!Number.isFinite(topBoundary[x])) topBoundary[x] = topBoundary[x + 1]
+      if (!Number.isFinite(bottomBoundary[x])) bottomBoundary[x] = bottomBoundary[x + 1]
+    }
+    for (let x = 0; x < W; x++) {
+      if (!Number.isFinite(topBoundary[x])) topBoundary[x] = H * 0.2
+      if (!Number.isFinite(bottomBoundary[x])) bottomBoundary[x] = H * 0.8
+    }
+
+    // Draw TOP and BOTTOM sectors following curved limits instead of straight lines.
+    ctx.fillStyle = hexToRgba(polarColors.top, Math.min(sectorOpacity + 0.04, 0.75))
+    ctx.beginPath()
+    ctx.moveTo(0, 0)
+    for (let x = 0; x < W; x++) ctx.lineTo(x, topBoundary[x])
+    ctx.lineTo(W, 0)
+    ctx.closePath()
+    ctx.fill()
+
+    ctx.fillStyle = hexToRgba(polarColors.bottom, Math.min(sectorOpacity + 0.04, 0.75))
+    ctx.beginPath()
+    ctx.moveTo(0, H)
+    for (let x = 0; x < W; x++) ctx.lineTo(x, bottomBoundary[x])
+    ctx.lineTo(W, H)
+    ctx.closePath()
+    ctx.fill()
 
     // Face-local projected curves (horizontal and vertical) clipped to each 90° face.
     ctx.strokeStyle = color
@@ -199,18 +273,112 @@ const EquirectangularGrid = ({
     })
     ctx.globalAlpha = 1
 
-    // Master boundaries and main latitude references.
+    // TOP curves (full family), clipped strictly to TOP sector.
+    const topCurveCount = 3
+    const snapLongitudesDeg = [-180, -135, -90, -45, 0, 45, 90, 135, 180]
+    ctx.save()
+    ctx.beginPath()
+    ctx.moveTo(0, 0)
+    for (let x = 0; x < W; x++) ctx.lineTo(x, topBoundary[x])
+    ctx.lineTo(W, 0)
+    ctx.closePath()
+    ctx.clip()
+
+    ctx.strokeStyle = color
+    for (let i = 1; i <= topCurveCount; i++) {
+      const t = i / (topCurveCount + 1)
+      const topAlpha = betaMax + t * (gammaMax - betaMax)
+      const sampleByX = new Map<number, number>()
+      for (let x = 0; x <= W; x += 2) {
+        const lambda = (x / W) * 2 * Math.PI - Math.PI
+        sampleByX.set(x, lambda)
+      }
+      snapLongitudesDeg.forEach((lonDeg) => {
+        const lambda = (lonDeg * Math.PI) / 180 + rotationOffset
+        const x = Math.round(longitudeToX(lambda))
+        sampleByX.set(Math.min(Math.max(x, 0), W), lambda)
+      })
+      const sortedXs = Array.from(sampleByX.keys()).sort((a, b) => a - b)
+
+      ctx.lineWidth = i === 1 ? 1.55 : 1.15
+      ctx.globalAlpha = i === 1 ? 0.9 : 0.72
+      ctx.beginPath()
+      let firstTopPoint = true
+      for (const x of sortedXs) {
+        const lambda = sampleByX.get(x)!
+        const phi = Math.atan(Math.tan(topAlpha) * Math.cos(lambda - rotationOffset))
+        const y = latitudeToY(phi)
+        if (firstTopPoint) {
+          ctx.moveTo(x, y)
+          firstTopPoint = false
+        } else {
+          ctx.lineTo(x, y)
+        }
+      }
+      ctx.stroke()
+    }
+    ctx.restore()
+
+    // BOTTOM curves (mirror family), clipped strictly to BOTTOM sector.
+    const bottomCurveCount = 3
+    ctx.save()
+    ctx.beginPath()
+    ctx.moveTo(0, H)
+    for (let x = 0; x < W; x++) ctx.lineTo(x, bottomBoundary[x])
+    ctx.lineTo(W, H)
+    ctx.closePath()
+    ctx.clip()
+
+    ctx.strokeStyle = color
+    for (let i = 1; i <= bottomCurveCount; i++) {
+      const t = i / (bottomCurveCount + 1)
+      const bottomAlpha = -(betaMax + t * (gammaMax - betaMax))
+      const sampleByX = new Map<number, number>()
+      for (let x = 0; x <= W; x += 2) {
+        const lambda = (x / W) * 2 * Math.PI - Math.PI
+        sampleByX.set(x, lambda)
+      }
+      snapLongitudesDeg.forEach((lonDeg) => {
+        const lambda = (lonDeg * Math.PI) / 180 + rotationOffset
+        const x = Math.round(longitudeToX(lambda))
+        sampleByX.set(Math.min(Math.max(x, 0), W), lambda)
+      })
+      const sortedXs = Array.from(sampleByX.keys()).sort((a, b) => a - b)
+
+      ctx.lineWidth = i === 1 ? 1.55 : 1.15
+      ctx.globalAlpha = i === 1 ? 0.9 : 0.72
+      ctx.beginPath()
+      let firstBottomPoint = true
+      for (const x of sortedXs) {
+        const lambda = sampleByX.get(x)!
+        const phi = Math.atan(Math.tan(bottomAlpha) * Math.cos(lambda - rotationOffset))
+        const y = latitudeToY(phi)
+        if (firstBottomPoint) {
+          ctx.moveTo(x, y)
+          firstBottomPoint = false
+        } else {
+          ctx.lineTo(x, y)
+        }
+      }
+      ctx.stroke()
+    }
+    ctx.restore()
+
+    // Master longitude/latitude references.
+    const longitudeRefs = [-180, -135, -90, -45, 0, 45, 90, 135, 180]
+    const latitudeRefs = [-90, -45, 0, 45, 90]
+
     ctx.save()
     ctx.strokeStyle = 'rgba(15, 25, 22, 0.72)'
     ctx.lineWidth = 2.2
-    ;[-Math.PI, -Math.PI / 2, 0, Math.PI / 2, Math.PI].forEach((lon) => {
-      const x = longitudeToX(lon + rotationOffset)
+    longitudeRefs.forEach((lonDeg) => {
+      const x = longitudeToX((lonDeg * Math.PI) / 180 + rotationOffset)
       ctx.beginPath()
       ctx.moveTo(x, 0)
       ctx.lineTo(x, H)
       ctx.stroke()
     })
-    ;[-90, -45, 0, 45, 90].forEach((latDeg) => {
+    latitudeRefs.forEach((latDeg) => {
       const y = ((90 - latDeg) / 180) * H
       ctx.beginPath()
       ctx.moveTo(0, y)
@@ -248,11 +416,11 @@ const EquirectangularGrid = ({
     ctx.fillText('Latitude', 0, 0)
     ctx.restore()
     ctx.font = 'italic 700 28px sans-serif'
-    ;[-180, 0, 180].forEach((lon) => {
+    longitudeRefs.forEach((lon) => {
       const x = longitudeToX((lon * Math.PI) / 180 + rotationOffset)
       drawWrappedText(`${lon}°`, x, H - 56)
     })
-    ;[-90, 0, 90].forEach((latDeg) => {
+    latitudeRefs.forEach((latDeg) => {
       const y = ((90 - latDeg) / 180) * H
       ctx.fillText(`${latDeg}°`, 80, y - 6)
     })
@@ -266,7 +434,7 @@ const EquirectangularGrid = ({
     ctx.restore()
 
     texture.needsUpdate = true
-  }, [visible, rotationOffset, lineDensity, fov, color, texture, sectorOpacity, sectorColors])
+  }, [visible, rotationOffset, lineDensity, fov, color, texture, sectorOpacity, sectorColors, polarColors])
 
   if (!visible) return null
 
