@@ -1,0 +1,553 @@
+import { Suspense, forwardRef, useImperativeHandle, useRef, useEffect, useState, useMemo, Component } from 'react'
+import type { ReactNode, ErrorInfo } from 'react'
+import { Canvas, useThree } from '@react-three/fiber'
+import { OrbitControls, Sphere, Html, Plane, OrthographicCamera, PerspectiveCamera } from '@react-three/drei'
+import * as THREE from 'three'
+import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
+import EquirectangularGrid from './EquirectangularGrid'
+
+export type ViewMode = 'spherical' | 'flat' | 'equirectangular' | 'rectilinear-front' | 'rectilinear-back' | 'rectilinear-left' | 'rectilinear-right'
+
+class ErrorBoundary extends Component<{ children: ReactNode, fallback: ReactNode }, { hasError: boolean }> {
+  constructor(props: any) {
+    super(props)
+    this.state = { hasError: false }
+  }
+
+  static getDerivedStateFromError(_: Error) {
+    return { hasError: true }
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error("Uncaught error:", error, errorInfo)
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback
+    }
+
+    return this.props.children
+  }
+}
+
+interface ViewerProps {
+  mediaUrl: string | null
+  mediaType: 'image' | 'video'
+  showGrid: boolean
+  viewMode: ViewMode
+  showSinusoidalGrid: boolean
+  gridRotation: number
+  gridDensity: number
+  gridFov: number
+}
+
+export interface ViewerRef {
+  getCameraState: () => { position: THREE.Vector3; target: THREE.Vector3; fov: number }
+  setCameraState: (state: { position: THREE.Vector3; target: THREE.Vector3; fov: number }) => void
+}
+
+const GRID_RADIUS = 490
+const LONGITUDE_ANGLES = [-180, -90, 0, 90, 180]
+const LATITUDE_ANGLES = [-90, -45, 0, 45, 90]
+const LONGITUDE_BOUNDARIES = [-135, -45, 45, 135]
+const LONGITUDE_REFERENCE_OFFSET_DEG = -90
+const FACE_SECTORS = [
+  { key: 'front', start: -45, end: 45, center: 0, color: '#2ecc71' },
+  { key: 'right', start: 45, end: 135, center: 45, color: '#f39c12' },
+  { key: 'back', start: 135, end: 225, center: 180, color: '#e74c3c' },
+  { key: 'left', start: -135, end: -45, center: -45, color: '#3498db' },
+] as const
+
+const normalizeLongitudeDeg = (deg: number) => {
+  let value = ((deg + 180) % 360 + 360) % 360 - 180
+  if (value === -180) value = 180
+  return value
+}
+
+const offsetLongitudeRef = (deg: number) => normalizeLongitudeDeg(deg + LONGITUDE_REFERENCE_OFFSET_DEG)
+
+const lonLatToVector = (lonDeg: number, latDeg: number, radius: number) => {
+  const lon = (lonDeg * Math.PI) / 180
+  const lat = (latDeg * Math.PI) / 180
+  const cosLat = Math.cos(lat)
+  return new THREE.Vector3(
+    Math.sin(lon) * cosLat * radius,
+    Math.sin(lat) * radius,
+    -Math.cos(lon) * cosLat * radius
+  )
+}
+
+const Polyline = ({
+  points,
+  color,
+  opacity = 1,
+}: {
+  points: THREE.Vector3[]
+  color: string
+  opacity?: number
+}) => {
+  const positions = useMemo(
+    () => new Float32Array(points.flatMap((p) => [p.x, p.y, p.z])),
+    [points]
+  )
+
+  return (
+    <line>
+      <bufferGeometry>
+        <bufferAttribute attach="attributes-position" args={[positions, 3]} />
+      </bufferGeometry>
+      <lineBasicMaterial color={color} transparent opacity={opacity} />
+    </line>
+  )
+}
+
+const MeridianLine = ({ lonDeg, color }: { lonDeg: number; color: string }) => {
+  const points = useMemo(() => {
+    const list: THREE.Vector3[] = []
+    for (let lat = -89; lat <= 89; lat += 2) {
+      list.push(lonLatToVector(lonDeg, lat, GRID_RADIUS))
+    }
+    return list
+  }, [lonDeg])
+
+  return <Polyline points={points} color={color} opacity={0.95} />
+}
+
+const ParallelLine = ({ latDeg, color }: { latDeg: number; color: string }) => {
+  const points = useMemo(() => {
+    const list: THREE.Vector3[] = []
+    for (let lon = -180; lon <= 180; lon += 2) {
+      list.push(lonLatToVector(lon, latDeg, GRID_RADIUS))
+    }
+    return list
+  }, [latDeg])
+
+  return <Polyline points={points} color={color} opacity={0.95} />
+}
+
+const SectorArc = ({
+  startDeg,
+  endDeg,
+  color,
+  latDeg = 0,
+}: {
+  startDeg: number
+  endDeg: number
+  color: string
+  latDeg?: number
+}) => {
+  const points = useMemo(() => {
+    const list: THREE.Vector3[] = []
+    const step = 2
+    for (let lon = startDeg; lon <= endDeg; lon += step) {
+      const normalized = lon > 180 ? lon - 360 : lon
+      list.push(lonLatToVector(normalized, latDeg, GRID_RADIUS - 8))
+    }
+    return list
+  }, [startDeg, endDeg, latDeg])
+
+  return <Polyline points={points} color={color} opacity={1} />
+}
+
+const SphericalGridOverlay = () => {
+  return (
+    <group>
+      <mesh>
+        <sphereGeometry args={[GRID_RADIUS, 36, 18]} />
+        <meshBasicMaterial wireframe color="#00c2d7" transparent opacity={0.22} side={THREE.BackSide} />
+      </mesh>
+
+      {LONGITUDE_ANGLES.map((lon) => (
+        <MeridianLine
+          key={`lon-${lon}`}
+          lonDeg={offsetLongitudeRef(lon)}
+          color={lon === 0 ? '#ffd400' : '#00e5ff'}
+        />
+      ))}
+      {LONGITUDE_BOUNDARIES.map((lon) => (
+        <MeridianLine key={`boundary-${lon}`} lonDeg={offsetLongitudeRef(lon)} color="#ff8a00" />
+      ))}
+      {LATITUDE_ANGLES.filter((lat) => Math.abs(lat) !== 90).map((lat) => (
+        <ParallelLine key={`lat-${lat}`} latDeg={lat} color={lat === 0 ? '#ffd400' : '#7cff7c'} />
+      ))}
+
+      {/* Rectilinear-face highlighting (same angular ranges as front/right/back/left) */}
+      {FACE_SECTORS.map((sector) => (
+        <group key={`sector-${sector.key}`}>
+          <SectorArc
+            startDeg={sector.start + LONGITUDE_REFERENCE_OFFSET_DEG}
+            endDeg={sector.end + LONGITUDE_REFERENCE_OFFSET_DEG}
+            color={sector.color}
+            latDeg={0}
+          />
+          <SectorArc
+            startDeg={sector.start + LONGITUDE_REFERENCE_OFFSET_DEG}
+            endDeg={sector.end + LONGITUDE_REFERENCE_OFFSET_DEG}
+            color={sector.color}
+            latDeg={18}
+          />
+          <SectorArc
+            startDeg={sector.start + LONGITUDE_REFERENCE_OFFSET_DEG}
+            endDeg={sector.end + LONGITUDE_REFERENCE_OFFSET_DEG}
+            color={sector.color}
+            latDeg={-18}
+          />
+        </group>
+      ))}
+
+      {/* Pole markers for +/- 90 latitude */}
+      <mesh position={lonLatToVector(0, 90, GRID_RADIUS)}>
+        <sphereGeometry args={[6, 12, 12]} />
+        <meshBasicMaterial color="#7cff7c" />
+      </mesh>
+      <mesh position={lonLatToVector(0, -90, GRID_RADIUS)}>
+        <sphereGeometry args={[6, 12, 12]} />
+        <meshBasicMaterial color="#7cff7c" />
+      </mesh>
+
+      {/* Extra labels showing rectilinear sectors directly */}
+      {FACE_SECTORS.map((sector) => (
+        <Html
+          key={`sector-label-${sector.key}`}
+          position={lonLatToVector(offsetLongitudeRef(sector.center), -20, GRID_RADIUS - 40).toArray()}
+          center
+        >
+          <div
+            style={{
+              color: sector.color,
+              fontSize: 11,
+              fontWeight: 800,
+              letterSpacing: 0.4,
+              textShadow: '0 0 6px rgba(0,0,0,0.95)',
+              textTransform: 'uppercase',
+            }}
+          >
+            {sector.key}
+          </div>
+        </Html>
+      ))}
+
+      {/* Horizontal longitude references on equatorial axis */}
+      {LONGITUDE_ANGLES.map((lon) => (
+        <Html
+          key={`lon-label-${lon}`}
+          position={lonLatToVector(offsetLongitudeRef(lon), 6, GRID_RADIUS - 36).toArray()}
+          center
+        >
+          <div
+            style={{
+              color: lon === 0 ? '#ffd400' : '#d7fbff',
+              fontSize: 11,
+              fontWeight: 800,
+              letterSpacing: 0.2,
+              textShadow: '0 0 6px rgba(0,0,0,0.95)',
+              background: 'rgba(0,0,0,0.28)',
+              padding: '2px 4px',
+              borderRadius: 4,
+            }}
+          >
+            {lon}°
+          </div>
+        </Html>
+      ))}
+    </group>
+  )
+}
+
+const ImageSphere = ({ texture, viewMode }: { texture: THREE.Texture, viewMode: ViewMode }) => {
+
+  if (viewMode === 'flat' || viewMode === 'equirectangular') {
+    return (
+      <Plane args={[2, 1]} scale={[1, 1, 1]}>
+        <meshBasicMaterial map={texture} side={THREE.DoubleSide} />
+      </Plane>
+    )
+  }
+
+  return (
+    <Sphere args={[500, 60, 40]} scale={[-1, 1, 1]}>
+      <meshBasicMaterial map={texture} side={THREE.BackSide} />
+    </Sphere>
+  )
+}
+
+const Loader = () => (
+  <Html center>
+    <div style={{ color: '#fff', fontSize: 20 }}>Loading...</div>
+  </Html>
+)
+
+const CameraController = forwardRef<ViewerRef, { viewMode: ViewMode }>((props, ref) => {
+  const { camera } = useThree()
+  const controlsRef = useRef<OrbitControlsImpl>(null)
+
+  useEffect(() => {
+    if (props.viewMode === 'equirectangular') {
+      camera.position.set(0, 0, 10)
+      camera.lookAt(0, 0, 0)
+      if (camera instanceof THREE.OrthographicCamera) {
+        camera.zoom = 1
+        camera.updateProjectionMatrix()
+      }
+      if (controlsRef.current) {
+        controlsRef.current.enableRotate = false
+        controlsRef.current.enableZoom = false
+        controlsRef.current.enablePan = false
+        controlsRef.current.reset()
+      }
+    } else if (props.viewMode === 'flat') {
+      camera.position.set(0, 0, 2.2)
+      camera.lookAt(0, 0, 0)
+      if (controlsRef.current) {
+        controlsRef.current.enableRotate = false
+        controlsRef.current.enableZoom = true
+        controlsRef.current.enablePan = false
+        controlsRef.current.reset()
+      }
+    } else if (props.viewMode === 'spherical') {
+      camera.position.set(0, 0, 0.1)
+      const frontLon = offsetLongitudeRef(0)
+      const frontTarget = lonLatToVector(frontLon, 0, 1)
+      camera.lookAt(frontTarget)
+      if (controlsRef.current) {
+        controlsRef.current.enableRotate = true
+        controlsRef.current.enableZoom = true
+        controlsRef.current.target.copy(frontTarget)
+        controlsRef.current.update()
+      }
+    } else {
+      // Rectilinear views
+      camera.position.set(0, 0, 0.1)
+      let target = new THREE.Vector3(0, 0, 0)
+      
+      switch (props.viewMode) {
+        case 'rectilinear-front':
+          target.set(0, 0, -1)
+          break
+        case 'rectilinear-back':
+          target.set(0, 0, 1)
+          break
+        case 'rectilinear-left':
+          target.set(-1, 0, 0)
+          break
+        case 'rectilinear-right':
+          target.set(1, 0, 0)
+          break
+      }
+      
+      camera.lookAt(target)
+      if (controlsRef.current) {
+        controlsRef.current.target.copy(target)
+        controlsRef.current.update()
+        // Lock rotation for fixed views? Or allow looking around?
+        // Usually "Rectilinear View" implies a fixed perspective, but allowing slight movement is good.
+        // Let's reset to the target view.
+      }
+    }
+  }, [props.viewMode, camera])
+
+  useImperativeHandle(ref, () => ({
+    getCameraState: () => {
+      if (controlsRef.current) {
+        return {
+          position: camera.position.clone(),
+          target: controlsRef.current.target.clone(),
+          fov: (camera as THREE.PerspectiveCamera).fov
+        }
+      }
+      return {
+        position: camera.position.clone(),
+        target: new THREE.Vector3(0, 0, 0),
+        fov: 75
+      }
+    },
+    setCameraState: (state) => {
+      camera.position.copy(state.position)
+      if (camera instanceof THREE.PerspectiveCamera) {
+        camera.fov = state.fov
+        camera.updateProjectionMatrix()
+      }
+      if (controlsRef.current) {
+        controlsRef.current.target.copy(state.target)
+        controlsRef.current.update()
+      }
+    }
+  }))
+
+  return (
+    <OrbitControls 
+      ref={controlsRef}
+      enableZoom={props.viewMode !== 'equirectangular'} 
+      enablePan={false} 
+      enableDamping={true} 
+      dampingFactor={0.05} 
+      rotateSpeed={-0.5} 
+    />
+  )
+})
+
+const ErrorFallback = () => (
+  <Html center>
+    <div style={{ color: '#ff6b6b', fontSize: 20, background: 'rgba(0,0,0,0.8)', padding: 12, borderRadius: 8 }}>
+      Error loading image. Please try another file.
+    </div>
+  </Html>
+)
+
+const EquirectangularCamera = () => {
+  const { size } = useThree()
+  const aspect = Math.max(size.width / Math.max(size.height, 1), 0.0001)
+  const fitMargin = 1.2
+
+  let halfWidth = 1
+  let halfHeight = 0.5
+
+  if (aspect >= 2) {
+    halfHeight = 0.5
+    halfWidth = halfHeight * aspect
+  } else {
+    halfWidth = 1
+    halfHeight = halfWidth / aspect
+  }
+
+  halfWidth *= fitMargin
+  halfHeight *= fitMargin
+
+  return (
+    <OrthographicCamera
+      makeDefault
+      left={-halfWidth}
+      right={halfWidth}
+      top={halfHeight}
+      bottom={-halfHeight}
+      near={0.1}
+      far={100}
+      position={[0, 0, 10]}
+    />
+  )
+}
+
+const Viewer = forwardRef<ViewerRef, ViewerProps>(({ mediaUrl, mediaType, showGrid, viewMode, showSinusoidalGrid, gridRotation, gridDensity, gridFov }, ref) => {
+  const [texture, setTexture] = useState<THREE.Texture | null>(null)
+  const [loadError, setLoadError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!mediaUrl) {
+      setTexture(null)
+      setLoadError(null)
+      return
+    }
+
+    let isCancelled = false
+    let videoEl: HTMLVideoElement | null = null
+
+    if (mediaType === 'video') {
+      const video = document.createElement('video')
+      videoEl = video
+      video.src = mediaUrl
+      video.crossOrigin = 'anonymous'
+      video.loop = true
+      video.muted = true
+      video.playsInline = true
+      video.preload = 'auto'
+      video.play().catch(() => {})
+
+      const onVideoReady = () => {
+        if (isCancelled) return
+        const videoTexture = new THREE.VideoTexture(video)
+        videoTexture.colorSpace = THREE.SRGBColorSpace
+        videoTexture.needsUpdate = true
+        setTexture(videoTexture)
+        setLoadError(null)
+      }
+
+      const onVideoError = () => {
+        if (!isCancelled) {
+          setTexture(null)
+          setLoadError('No se pudo cargar el video. Prueba otro MP4/WebM.')
+        }
+      }
+
+      video.addEventListener('loadeddata', onVideoReady, { once: true })
+      video.addEventListener('error', onVideoError, { once: true })
+    } else {
+      const loader = new THREE.TextureLoader()
+      loader.setCrossOrigin('anonymous')
+
+      loader.load(
+        mediaUrl,
+        (loadedTexture) => {
+          if (isCancelled) {
+            loadedTexture.dispose()
+            return
+          }
+          loadedTexture.mapping = THREE.EquirectangularReflectionMapping
+          loadedTexture.colorSpace = THREE.SRGBColorSpace
+          loadedTexture.needsUpdate = true
+          setTexture(loadedTexture)
+          setLoadError(null)
+        },
+        undefined,
+        () => {
+          if (!isCancelled) {
+            setTexture(null)
+            setLoadError('No se pudo cargar la imagen. Prueba otro JPG/PNG.')
+          }
+        }
+      )
+    }
+
+    return () => {
+      isCancelled = true
+      setTexture((prev) => {
+        if (prev) prev.dispose()
+        return null
+      })
+      if (videoEl) {
+        videoEl.pause()
+        videoEl.src = ''
+      }
+    }
+  }, [mediaUrl, mediaType])
+
+  return (
+    <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+      <Canvas>
+        {viewMode === 'equirectangular' ? (
+          <EquirectangularCamera />
+        ) : (
+          <PerspectiveCamera makeDefault fov={75} position={[0, 0, 0.1]} />
+        )}
+        <color attach="background" args={['#111']} />
+        <CameraController ref={ref} viewMode={viewMode} />
+        <Suspense fallback={<Loader />}>
+          <ErrorBoundary fallback={<ErrorFallback />}>
+            {texture && <ImageSphere key={`${mediaType}:${mediaUrl ?? 'empty'}`} texture={texture} viewMode={viewMode} />}
+          </ErrorBoundary>
+        </Suspense>
+        {showGrid && viewMode === 'spherical' && <SphericalGridOverlay />}
+        {showSinusoidalGrid && (viewMode === 'flat' || viewMode === 'equirectangular') && (
+          <EquirectangularGrid 
+            visible={true} 
+            rotationOffset={gridRotation}
+            lineDensity={gridDensity}
+            fov={gridFov}
+          />
+        )}
+      </Canvas>
+      {!mediaUrl && (
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+          <p style={{ color: '#b6b6b6', fontSize: 18 }}>Drag & Drop an equirectangular image/video here</p>
+        </div>
+      )}
+      {loadError && (
+        <div style={{ position: 'absolute', bottom: 18, left: 18, right: 18, background: 'rgba(185,28,28,0.85)', color: '#fff', padding: '10px 12px', borderRadius: 8, fontSize: 13 }}>
+          {loadError}
+        </div>
+      )}
+    </div>
+  )
+})
+
+export default Viewer
