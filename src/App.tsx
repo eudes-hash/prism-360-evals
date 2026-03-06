@@ -16,8 +16,8 @@ interface Issue {
 function App() {
   const [mediaUrl, setMediaUrl] = useState<string | null>('/default-panorama.png')
   const [mediaType, setMediaType] = useState<'image' | 'video'>('image')
-  const [showGrid, setShowGrid] = useState(false)
-  const [showSinusoidalGrid, setShowSinusoidalGrid] = useState(false)
+  const [showGrid, setShowGrid] = useState(true)
+  const [showSinusoidalGrid, setShowSinusoidalGrid] = useState(true)
   const [gridRotation, setGridRotation] = useState(0)
   const [gridDensity, setGridDensity] = useState(8)
   const [gridFov, setGridFov] = useState(90)
@@ -32,6 +32,17 @@ function App() {
     top: '#8b5cf6',
     bottom: '#0ea5e9',
   })
+
+  const SAMPLE_IMAGES = [
+    { name: 'Default Panorama', url: '/default-panorama.png' },
+    { name: 'Image 1', url: '/360_images/11bdd45e-5276-4f9c-9e50-e2cd5b4c59ae.png' },
+    { name: 'Image 2', url: '/360_images/2512f5ec-c51f-4e1d-8c8a-be05193dc2f9.png' },
+    { name: 'Image 3', url: '/360_images/3f59fb4a-df51-4104-8ce0-a87305b0334b.png' },
+    { name: 'Image 4', url: '/360_images/7d64f729-3efb-4cdd-a374-684ddde7d51a.png' },
+    { name: 'Image 5', url: '/360_images/98f05e48-0c4b-4a97-858e-55ba75be6336.png' },
+    { name: 'Image 6', url: '/360_images/dd156928-99d4-409b-8fe6-5b5e01468487.png' },
+    { name: 'Image 7', url: '/360_images/e8347f4c-10c4-4699-86ee-b0d841299174.png' },
+  ]
   const [viewMode, setViewMode] = useState<ViewMode>('spherical')
   const [issues, setIssues] = useState<Issue[]>([])
   const [isLogging, setIsLogging] = useState(false)
@@ -237,12 +248,42 @@ function App() {
               </select>
             </div>
 
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <label style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Select Image</label>
+              <select 
+                onChange={(e) => {
+                  if (e.target.value) {
+                    setMediaType('image')
+                    setMediaUrl(e.target.value)
+                  }
+                }}
+                style={{ 
+                  background: 'rgba(0,0,0,0.3)', 
+                  color: '#f1f5f9', 
+                  borderRadius: 8, 
+                  border: '1px solid rgba(255,255,255,0.1)', 
+                  padding: '10px 12px', 
+                  fontSize: 13,
+                  outline: 'none',
+                  width: '100%'
+                }}
+                value={mediaUrl || ''}
+              >
+                <option value="" disabled>Select an image...</option>
+                {SAMPLE_IMAGES.map((img) => (
+                  <option key={img.url} value={img.url}>
+                    {img.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <button 
               onClick={() => {
                 setMediaType('image')
                 setMediaUrl('/default-panorama.png')
               }}
-              style={{ background: 'rgba(255,255,255,0.05)', color: '#cbd5e1', border: '1px solid rgba(255,255,255,0.05)', padding: '10px', borderRadius: 8, fontSize: 12, cursor: 'pointer', transition: 'background 0.2s' }}
+              style={{ background: 'rgba(255,255,255,0.05)', color: '#cbd5e1', border: '1px solid rgba(255,255,255,0.05)', padding: '10px', borderRadius: 8, fontSize: 12, cursor: 'pointer', transition: 'background 0.2s', display: 'none' }}
             >
               Load Default Image
             </button>
