@@ -40,11 +40,19 @@ interface ViewerProps {
   gridRotation: number
   gridDensity: number
   gridFov: number
+  sectorOpacity: number
+  sectorColors: {
+    front: string
+    right: string
+    back: string
+    left: string
+  }
 }
 
 export interface ViewerRef {
   getCameraState: () => { position: THREE.Vector3; target: THREE.Vector3; fov: number }
   setCameraState: (state: { position: THREE.Vector3; target: THREE.Vector3; fov: number }) => void
+  adjustSphericalZoom: (deltaFov: number) => void
 }
 
 const GRID_RADIUS = 490
@@ -53,11 +61,12 @@ const LATITUDE_ANGLES = [-90, -45, 0, 45, 90]
 const LONGITUDE_BOUNDARIES = [-135, -45, 45, 135]
 const LONGITUDE_REFERENCE_OFFSET_DEG = -90
 const FACE_SECTORS = [
-  { key: 'front', start: -45, end: 45, center: 0, color: '#2ecc71' },
-  { key: 'right', start: 45, end: 135, center: 45, color: '#f39c12' },
-  { key: 'back', start: 135, end: 225, center: 180, color: '#e74c3c' },
-  { key: 'left', start: -135, end: -45, center: -45, color: '#3498db' },
+  { key: 'front', start: -45, end: 45, center: 0 },
+  { key: 'right', start: 45, end: 135, center: 45 },
+  { key: 'back', start: 135, end: 225, center: 180 },
+  { key: 'left', start: -135, end: -45, center: -45 },
 ] as const
+type SectorKey = (typeof FACE_SECTORS)[number]['key']
 
 const normalizeLongitudeDeg = (deg: number) => {
   let value = ((deg + 180) % 360 + 360) % 360 - 180
@@ -150,7 +159,75 @@ const SectorArc = ({
   return <Polyline points={points} color={color} opacity={1} />
 }
 
-const SphericalGridOverlay = () => {
+const SectorSurface = ({
+  startDeg,
+  endDeg,
+  color,
+  opacity,
+}: {
+  startDeg: number
+  endDeg: number
+  color: string
+  opacity: number
+}) => {
+  const geometry = useMemo(() => {
+    const lonStep = 8
+    const latStep = 8
+    const latMin = -84
+    const latMax = 84
+    const positions: number[] = []
+    const indices: number[] = []
+    const lons: number[] = []
+    const lats: number[] = []
+
+    for (let lon = startDeg; lon <= endDeg + 0.001; lon += lonStep) {
+      const normalized = lon > 180 ? lon - 360 : lon
+      lons.push(normalized)
+    }
+    for (let lat = latMin; lat <= latMax + 0.001; lat += latStep) {
+      lats.push(lat)
+    }
+
+    for (let i = 0; i < lats.length; i++) {
+      for (let j = 0; j < lons.length; j++) {
+        const p = lonLatToVector(lons[j], lats[i], GRID_RADIUS - 6)
+        positions.push(p.x, p.y, p.z)
+      }
+    }
+
+    const cols = lons.length
+    for (let i = 0; i < lats.length - 1; i++) {
+      for (let j = 0; j < cols - 1; j++) {
+        const a = i * cols + j
+        const b = a + 1
+        const c = (i + 1) * cols + j
+        const d = c + 1
+        indices.push(a, c, b)
+        indices.push(b, c, d)
+      }
+    }
+
+    const geo = new THREE.BufferGeometry()
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
+    geo.setIndex(indices)
+    geo.computeVertexNormals()
+    return geo
+  }, [startDeg, endDeg])
+
+  return (
+    <mesh geometry={geometry}>
+      <meshBasicMaterial color={color} transparent opacity={opacity} side={THREE.DoubleSide} depthWrite={false} />
+    </mesh>
+  )
+}
+
+const SphericalGridOverlay = ({
+  sectorOpacity,
+  sectorColors,
+}: {
+  sectorOpacity: number
+  sectorColors: Record<SectorKey, string>
+}) => {
   return (
     <group>
       <mesh>
@@ -175,22 +252,28 @@ const SphericalGridOverlay = () => {
       {/* Rectilinear-face highlighting (same angular ranges as front/right/back/left) */}
       {FACE_SECTORS.map((sector) => (
         <group key={`sector-${sector.key}`}>
+          <SectorSurface
+            startDeg={sector.start + LONGITUDE_REFERENCE_OFFSET_DEG}
+            endDeg={sector.end + LONGITUDE_REFERENCE_OFFSET_DEG}
+            color={sectorColors[sector.key]}
+            opacity={sectorOpacity}
+          />
           <SectorArc
             startDeg={sector.start + LONGITUDE_REFERENCE_OFFSET_DEG}
             endDeg={sector.end + LONGITUDE_REFERENCE_OFFSET_DEG}
-            color={sector.color}
+            color={sectorColors[sector.key]}
             latDeg={0}
           />
           <SectorArc
             startDeg={sector.start + LONGITUDE_REFERENCE_OFFSET_DEG}
             endDeg={sector.end + LONGITUDE_REFERENCE_OFFSET_DEG}
-            color={sector.color}
+            color={sectorColors[sector.key]}
             latDeg={18}
           />
           <SectorArc
             startDeg={sector.start + LONGITUDE_REFERENCE_OFFSET_DEG}
             endDeg={sector.end + LONGITUDE_REFERENCE_OFFSET_DEG}
-            color={sector.color}
+            color={sectorColors[sector.key]}
             latDeg={-18}
           />
         </group>
@@ -215,7 +298,7 @@ const SphericalGridOverlay = () => {
         >
           <div
             style={{
-              color: sector.color,
+              color: sectorColors[sector.key],
               fontSize: 11,
               fontWeight: 800,
               letterSpacing: 0.4,
@@ -372,7 +455,15 @@ const CameraController = forwardRef<ViewerRef, { viewMode: ViewMode }>((props, r
         controlsRef.current.target.copy(state.target)
         controlsRef.current.update()
       }
-    }
+    },
+    adjustSphericalZoom: (deltaFov) => {
+      if (props.viewMode !== 'spherical') return
+      if (!(camera instanceof THREE.PerspectiveCamera)) return
+      const nextFov = THREE.MathUtils.clamp(camera.fov + deltaFov, 30, 110)
+      camera.fov = nextFov
+      camera.updateProjectionMatrix()
+      if (controlsRef.current) controlsRef.current.update()
+    },
   }))
 
   return (
@@ -428,7 +519,18 @@ const EquirectangularCamera = () => {
   )
 }
 
-const Viewer = forwardRef<ViewerRef, ViewerProps>(({ mediaUrl, mediaType, showGrid, viewMode, showSinusoidalGrid, gridRotation, gridDensity, gridFov }, ref) => {
+const Viewer = forwardRef<ViewerRef, ViewerProps>(({
+  mediaUrl,
+  mediaType,
+  showGrid,
+  viewMode,
+  showSinusoidalGrid,
+  gridRotation,
+  gridDensity,
+  gridFov,
+  sectorOpacity,
+  sectorColors,
+}, ref) => {
   const [texture, setTexture] = useState<THREE.Texture | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
 
@@ -526,13 +628,17 @@ const Viewer = forwardRef<ViewerRef, ViewerProps>(({ mediaUrl, mediaType, showGr
             {texture && <ImageSphere key={`${mediaType}:${mediaUrl ?? 'empty'}`} texture={texture} viewMode={viewMode} />}
           </ErrorBoundary>
         </Suspense>
-        {showGrid && viewMode === 'spherical' && <SphericalGridOverlay />}
+        {showGrid && viewMode === 'spherical' && (
+          <SphericalGridOverlay sectorOpacity={sectorOpacity} sectorColors={sectorColors} />
+        )}
         {showSinusoidalGrid && (viewMode === 'flat' || viewMode === 'equirectangular') && (
           <EquirectangularGrid 
             visible={true} 
             rotationOffset={gridRotation}
             lineDensity={gridDensity}
             fov={gridFov}
+            sectorOpacity={sectorOpacity}
+            sectorColors={sectorColors}
           />
         )}
       </Canvas>

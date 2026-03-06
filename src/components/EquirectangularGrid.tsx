@@ -7,6 +7,13 @@ interface EquirectangularGridProps {
   lineDensity?: number
   fov?: number
   color?: string
+  sectorOpacity?: number
+  sectorColors?: {
+    front: string
+    right: string
+    back: string
+    left: string
+  }
 }
 
 const EquirectangularGrid = ({
@@ -15,6 +22,13 @@ const EquirectangularGrid = ({
   lineDensity = 8,
   fov = 90,
   color = '#00ff88',
+  sectorOpacity = 0.22,
+  sectorColors = {
+    front: '#2ecc71',
+    right: '#f39c12',
+    back: '#e74c3c',
+    left: '#3498db',
+  },
 }: EquirectangularGridProps) => {
   const texture = useMemo(() => {
     const canvas = document.createElement('canvas')
@@ -44,12 +58,21 @@ const EquirectangularGrid = ({
     const longitudeToX = (lambda: number) => wrap01((lambda + Math.PI) / (2 * Math.PI)) * W
     const latitudeToY = (phi: number) => (0.5 - phi / Math.PI) * H
     const yAxis = new THREE.Vector3(0, 1, 0)
+    const hexToRgba = (hex: string, alpha: number) => {
+      const h = hex.replace('#', '')
+      if (!(h.length === 3 || h.length === 6)) return `rgba(255,255,255,${alpha})`
+      const full = h.length === 3 ? h.split('').map((c) => c + c).join('') : h
+      const r = parseInt(full.slice(0, 2), 16)
+      const g = parseInt(full.slice(2, 4), 16)
+      const b = parseInt(full.slice(4, 6), 16)
+      return `rgba(${r},${g},${b},${alpha})`
+    }
 
     const faceDefs = [
-      { name: 'BACK', center: Math.PI, fill: 'rgba(16,130,104,0.30)' },
-      { name: 'LEFT', center: -Math.PI / 2, fill: 'rgba(20,154,126,0.30)' },
-      { name: 'FRONT', center: 0, fill: 'rgba(26,196,156,0.34)' },
-      { name: 'RIGHT', center: Math.PI / 2, fill: 'rgba(20,154,126,0.30)' },
+      { name: 'BACK', key: 'back' as const, center: Math.PI },
+      { name: 'LEFT', key: 'left' as const, center: -Math.PI / 2 },
+      { name: 'FRONT', key: 'front' as const, center: 0 },
+      { name: 'RIGHT', key: 'right' as const, center: Math.PI / 2 },
     ] as const
 
     const drawWrappedText = (text: string, x: number, y: number) => {
@@ -75,7 +98,7 @@ const EquirectangularGrid = ({
       const center = wrapPi(face.center + rotationOffset)
       const start = center - Math.PI / 4
       const startX = longitudeToX(start)
-      ctx.fillStyle = face.fill
+      ctx.fillStyle = hexToRgba(sectorColors[face.key], sectorOpacity)
       if (startX + faceWidthPx <= W) {
         ctx.fillRect(startX, 0, faceWidthPx, H)
       } else {
@@ -243,7 +266,7 @@ const EquirectangularGrid = ({
     ctx.restore()
 
     texture.needsUpdate = true
-  }, [visible, rotationOffset, lineDensity, fov, color, texture])
+  }, [visible, rotationOffset, lineDensity, fov, color, texture, sectorOpacity, sectorColors])
 
   if (!visible) return null
 

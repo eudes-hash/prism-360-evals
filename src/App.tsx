@@ -21,9 +21,17 @@ function App() {
   const [gridRotation, setGridRotation] = useState(0)
   const [gridDensity, setGridDensity] = useState(8)
   const [gridFov, setGridFov] = useState(90)
+  const [sectorOpacity, setSectorOpacity] = useState(0.22)
+  const [sectorColors, setSectorColors] = useState({
+    front: '#2ecc71',
+    right: '#f39c12',
+    back: '#e74c3c',
+    left: '#3498db',
+  })
   const [viewMode, setViewMode] = useState<ViewMode>('spherical')
   const [issues, setIssues] = useState<Issue[]>([])
   const [isLogging, setIsLogging] = useState(false)
+  const [isMenuMinimized, setIsMenuMinimized] = useState(false)
   const [newIssueDesc, setNewIssueDesc] = useState('')
   
   const viewerRef = useRef<ViewerRef>(null)
@@ -82,6 +90,14 @@ function App() {
     }
   }
 
+  const handleZoomIn = () => {
+    viewerRef.current?.adjustSphericalZoom(-8)
+  }
+
+  const handleZoomOut = () => {
+    viewerRef.current?.adjustSphericalZoom(8)
+  }
+
   const exportIssues = () => {
     const data = JSON.stringify(issues, null, 2)
     const blob = new Blob([data], { type: 'application/json' })
@@ -110,12 +126,32 @@ function App() {
           gridRotation={gridRotation}
           gridDensity={gridDensity}
           gridFov={gridFov}
+          sectorOpacity={sectorOpacity}
+          sectorColors={sectorColors}
         />
         
         {/* Overlay UI */}
-        <div style={{ position: 'absolute', top: 16, left: 16, zIndex: 10, background: 'rgba(0,0,0,0.55)', padding: 16, borderRadius: 10, color: '#fff', width: 310, maxHeight: '90vh', overflowY: 'auto' }}>
-          <h1 style={{ fontSize: 22, fontWeight: 700, margin: '0 0 16px 0' }}>360° Evaluator</h1>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ position: 'absolute', top: 16, left: 16, zIndex: 10, background: 'rgba(0,0,0,0.55)', padding: 16, borderRadius: 10, color: '#fff', width: isMenuMinimized ? 220 : 310, maxHeight: '90vh', overflowY: 'auto', transition: 'width 120ms ease' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: isMenuMinimized ? 0 : 16 }}>
+            <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>360° Evaluator</h1>
+            <button
+              onClick={() => setIsMenuMinimized((prev) => !prev)}
+              style={{
+                background: '#374151',
+                color: '#fff',
+                border: '1px solid #4b5563',
+                borderRadius: 8,
+                fontSize: 12,
+                padding: '6px 10px',
+                cursor: 'pointer',
+              }}
+            >
+              {isMenuMinimized ? 'Expandir' : 'Minimizar'}
+            </button>
+          </div>
+
+          {!isMenuMinimized && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             <label style={{ cursor: 'pointer', background: '#2563eb', padding: '10px 12px', borderRadius: 8, fontSize: 13, textAlign: 'center', display: 'block' }}>
               Upload Image / Video
               <input 
@@ -164,12 +200,62 @@ function App() {
             </button>
 
             {viewMode === 'spherical' && (
-              <button 
-                onClick={() => setShowGrid(!showGrid)}
-                style={{ background: showGrid ? '#16a34a' : '#4b5563', color: '#fff', border: 'none', padding: '10px 12px', borderRadius: 8, fontSize: 13, cursor: 'pointer' }}
-              >
-                {showGrid ? 'Hide Grid' : 'Show Grid'}
-              </button>
+              <>
+                <button 
+                  onClick={() => setShowGrid(!showGrid)}
+                  style={{ background: showGrid ? '#16a34a' : '#4b5563', color: '#fff', border: 'none', padding: '10px 12px', borderRadius: 8, fontSize: 13, cursor: 'pointer' }}
+                >
+                  {showGrid ? 'Hide Grid' : 'Show Grid'}
+                </button>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                  <button
+                    onClick={handleZoomOut}
+                    style={{ background: '#4b5563', color: '#fff', border: 'none', padding: '10px 12px', borderRadius: 8, fontSize: 13, cursor: 'pointer' }}
+                  >
+                    Zoom Out
+                  </button>
+                  <button
+                    onClick={handleZoomIn}
+                    style={{ background: '#4b5563', color: '#fff', border: 'none', padding: '10px 12px', borderRadius: 8, fontSize: 13, cursor: 'pointer' }}
+                  >
+                    Zoom In
+                  </button>
+                </div>
+                {showGrid && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, background: '#374151', padding: 10, borderRadius: 8 }}>
+                    <label style={{ fontSize: 12, color: '#d1d5db' }}>
+                      Transparencia sectores: {sectorOpacity.toFixed(2)}
+                    </label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="0.7"
+                      step="0.01"
+                      value={sectorOpacity}
+                      onChange={(e) => setSectorOpacity(parseFloat(e.target.value))}
+                      style={{ width: '100%' }}
+                    />
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                      {(['front', 'right', 'back', 'left'] as const).map((sector) => (
+                        <label
+                          key={sector}
+                          style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#d1d5db', textTransform: 'uppercase' }}
+                        >
+                          {sector}
+                          <input
+                            type="color"
+                            value={sectorColors[sector]}
+                            onChange={(e) =>
+                              setSectorColors((prev) => ({ ...prev, [sector]: e.target.value }))
+                            }
+                            style={{ width: 28, height: 20, border: 'none', background: 'transparent', padding: 0, cursor: 'pointer' }}
+                          />
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
             )}
 
             {(viewMode === 'flat' || viewMode === 'equirectangular') && (
@@ -219,6 +305,40 @@ function App() {
                       onChange={(e) => setGridFov(parseInt(e.target.value, 10))}
                       style={{ width: '100%' }}
                     />
+                    {viewMode === 'equirectangular' && (
+                      <>
+                        <label style={{ fontSize: 12, color: '#d1d5db' }}>
+                          Transparencia sectores: {sectorOpacity.toFixed(2)}
+                        </label>
+                        <input
+                          type="range"
+                          min="0"
+                          max="0.7"
+                          step="0.01"
+                          value={sectorOpacity}
+                          onChange={(e) => setSectorOpacity(parseFloat(e.target.value))}
+                          style={{ width: '100%' }}
+                        />
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                          {(['front', 'right', 'back', 'left'] as const).map((sector) => (
+                            <label
+                              key={sector}
+                              style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#d1d5db', textTransform: 'uppercase' }}
+                            >
+                              {sector}
+                              <input
+                                type="color"
+                                value={sectorColors[sector]}
+                                onChange={(e) =>
+                                  setSectorColors((prev) => ({ ...prev, [sector]: e.target.value }))
+                                }
+                                style={{ width: 28, height: 20, border: 'none', background: 'transparent', padding: 0, cursor: 'pointer' }}
+                              />
+                            </label>
+                          ))}
+                        </div>
+                      </>
+                    )}
                   </div>
                 )}
               </div>
@@ -240,7 +360,8 @@ function App() {
                 Export Report ({issues.length})
               </button>
             )}
-          </div>
+            </div>
+          )}
         </div>
 
         {/* Issue Logging Modal */}
