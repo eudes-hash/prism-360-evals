@@ -64,6 +64,8 @@ function App() {
   const [videoDuration, setVideoDuration] = useState(0)
   
   const viewerRef = useRef<ViewerRef>(null)
+  const autoMinimizeTimer = useRef<any>(null)
+  const openedByHover = useRef(false)
 
   useEffect(() => {
     let interval: any
@@ -123,6 +125,26 @@ function App() {
     e.preventDefault()
     e.stopPropagation()
   }, [])
+
+  const handleMouseEnter = () => {
+    if (autoMinimizeTimer.current) {
+      clearTimeout(autoMinimizeTimer.current)
+      autoMinimizeTimer.current = null
+    }
+    if (isMenuMinimized) {
+      setIsMenuMinimized(false)
+      openedByHover.current = true
+    }
+  }
+
+  const handleMouseLeave = () => {
+    if (!isMenuMinimized && openedByHover.current) {
+      autoMinimizeTimer.current = setTimeout(() => {
+        setIsMenuMinimized(true)
+        openedByHover.current = false
+      }, 5000)
+    }
+  }
 
   const handleLogIssue = () => {
     if (viewerRef.current) {
@@ -192,8 +214,11 @@ function App() {
         />
         
         {/* Overlay UI */}
-        <div style={{ 
-          position: 'absolute', 
+        <div 
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
+          style={{ 
+          position: 'absolute',  
           top: 20, 
           left: 20, 
           zIndex: 10, 
@@ -217,7 +242,10 @@ function App() {
               </h1>
             </div>
             <button
-              onClick={() => setIsMenuMinimized((prev) => !prev)}
+              onClick={() => {
+                setIsMenuMinimized((prev) => !prev)
+                openedByHover.current = false
+              }}
               style={{
                 background: 'rgba(255, 255, 255, 0.05)',
                 color: '#94a3b8',
@@ -371,20 +399,6 @@ function App() {
               >
                 {showGrid ? 'Hide Grid' : 'Show Grid'}
               </button>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                  <button
-                    onClick={handleZoomOut}
-                    style={{ background: 'rgba(255,255,255,0.05)', color: '#cbd5e1', border: '1px solid rgba(255,255,255,0.05)', padding: '10px', borderRadius: 8, fontSize: 13, cursor: 'pointer' }}
-                  >
-                    Zoom Out
-                  </button>
-                  <button
-                    onClick={handleZoomIn}
-                    style={{ background: 'rgba(255,255,255,0.05)', color: '#cbd5e1', border: '1px solid rgba(255,255,255,0.05)', padding: '10px', borderRadius: 8, fontSize: 13, cursor: 'pointer' }}
-                  >
-                    Zoom In
-                  </button>
-                </div>
                 {showGrid && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 12, background: 'rgba(0,0,0,0.2)', padding: 12, borderRadius: 10, border: '1px solid rgba(255,255,255,0.05)' }}>
                     <label style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
@@ -550,8 +564,8 @@ function App() {
           )}
         </div>
 
-        {/* Video Controls - Fixed Bottom Bar */}
-        {mediaType === 'video' && (
+        {/* Bottom Control Bar */}
+        {(mediaType === 'video' || viewMode === 'spherical') && (
           <div style={{ 
             position: 'absolute', 
             bottom: 30, 
@@ -567,48 +581,72 @@ function App() {
             boxShadow: '0 4px 24px -1px rgba(0, 0, 0, 0.3)',
             display: 'flex',
             flexDirection: 'column',
-            gap: 12,
+            gap: 16,
             zIndex: 20
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-              <button
-                onClick={handleTogglePlay}
-                style={{ 
-                  background: isPlaying ? 'rgba(255,255,255,0.2)' : '#3b82f6', 
-                  border: 'none', 
-                  borderRadius: '50%', 
-                  width: 40, 
-                  height: 40, 
-                  cursor: 'pointer', 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'center', 
-                  color: '#fff',
-                  transition: 'all 0.2s'
-                }}
-              >
-                {isPlaying ? (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
-                ) : (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-                )}
-              </button>
-              <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#94a3b8', fontWeight: 500 }}>
-                  <span>{formatTime(videoProgress)}</span>
-                  <span>{formatTime(videoDuration)}</span>
+            {/* Video Controls */}
+            {mediaType === 'video' && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                <button
+                  onClick={handleTogglePlay}
+                  style={{ 
+                    background: isPlaying ? 'rgba(255,255,255,0.2)' : '#3b82f6', 
+                    border: 'none', 
+                    borderRadius: '50%', 
+                    width: 40, 
+                    height: 40, 
+                    cursor: 'pointer', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    color: '#fff',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  {isPlaying ? (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                  ) : (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                  )}
+                </button>
+                <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#94a3b8', fontWeight: 500 }}>
+                    <span>{formatTime(videoProgress)}</span>
+                    <span>{formatTime(videoDuration)}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max={videoDuration || 100}
+                    step="0.1"
+                    value={videoProgress}
+                    onChange={handleSeek}
+                    style={{ width: '100%', accentColor: '#3b82f6', height: 4, cursor: 'pointer' }}
+                  />
                 </div>
-                <input
-                  type="range"
-                  min="0"
-                  max={videoDuration || 100}
-                  step="0.1"
-                  value={videoProgress}
-                  onChange={handleSeek}
-                  style={{ width: '100%', accentColor: '#3b82f6', height: 4, cursor: 'pointer' }}
-                />
               </div>
-            </div>
+            )}
+
+            {/* Zoom Controls */}
+            {viewMode === 'spherical' && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, borderTop: mediaType === 'video' ? '1px solid rgba(255,255,255,0.1)' : 'none', paddingTop: mediaType === 'video' ? 16 : 0 }}>
+                <span style={{ fontSize: 12, color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Zoom</span>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button
+                    onClick={handleZoomOut}
+                    style={{ background: 'rgba(255,255,255,0.1)', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: 8, fontSize: 13, cursor: 'pointer', transition: 'all 0.2s', fontWeight: 500 }}
+                  >
+                    - Out
+                  </button>
+                  <button
+                    onClick={handleZoomIn}
+                    style={{ background: 'rgba(255,255,255,0.1)', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: 8, fontSize: 13, cursor: 'pointer', transition: 'all 0.2s', fontWeight: 500 }}
+                  >
+                    + In
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
