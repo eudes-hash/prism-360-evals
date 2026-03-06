@@ -6,7 +6,7 @@ import * as THREE from 'three'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import EquirectangularGrid from './EquirectangularGrid'
 
-export type ViewMode = 'spherical' | 'flat' | 'equirectangular' | 'rectilinear-front' | 'rectilinear-back' | 'rectilinear-left' | 'rectilinear-right'
+export type ViewMode = 'spherical' | 'equirectangular' | 'rectilinear-front' | 'rectilinear-back' | 'rectilinear-left' | 'rectilinear-right'
 
 class ErrorBoundary extends Component<{ children: ReactNode, fallback: ReactNode }, { hasError: boolean }> {
   constructor(props: any) {
@@ -344,7 +344,7 @@ const SphericalGridOverlay = ({
 
 const ImageSphere = ({ texture, viewMode }: { texture: THREE.Texture, viewMode: ViewMode }) => {
 
-  if (viewMode === 'flat' || viewMode === 'equirectangular') {
+  if (viewMode === 'equirectangular') {
     return (
       <Plane args={[2, 1]} scale={[1, 1, 1]}>
         <meshBasicMaterial map={texture} side={THREE.DoubleSide} />
@@ -380,15 +380,6 @@ const CameraController = forwardRef<ViewerRef, { viewMode: ViewMode }>((props, r
       if (controlsRef.current) {
         controlsRef.current.enableRotate = false
         controlsRef.current.enableZoom = false
-        controlsRef.current.enablePan = false
-        controlsRef.current.reset()
-      }
-    } else if (props.viewMode === 'flat') {
-      camera.position.set(0, 0, 2.2)
-      camera.lookAt(0, 0, 0)
-      if (controlsRef.current) {
-        controlsRef.current.enableRotate = false
-        controlsRef.current.enableZoom = true
         controlsRef.current.enablePan = false
         controlsRef.current.reset()
       }
@@ -636,7 +627,7 @@ const Viewer = forwardRef<ViewerRef, ViewerProps>(({
         {showGrid && viewMode === 'spherical' && (
           <SphericalGridOverlay sectorOpacity={sectorOpacity} sectorColors={sectorColors} />
         )}
-        {showSinusoidalGrid && (viewMode === 'flat' || viewMode === 'equirectangular') && (
+        {showSinusoidalGrid && viewMode === 'equirectangular' && (
           <EquirectangularGrid 
             visible={true} 
             rotationOffset={gridRotation} 

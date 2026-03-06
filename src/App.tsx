@@ -115,7 +115,7 @@ function App() {
 
   return (
     <div 
-      style={{ width: '100%', height: '100vh', backgroundColor: '#111', overflow: 'hidden', position: 'relative', display: 'flex' }}
+      style={{ width: '100%', height: '100vh', backgroundColor: '#0f172a', overflow: 'hidden', position: 'relative', display: 'flex' }}
       onDrop={handleDrop}
       onDragOver={handleDragOver}
     >
@@ -136,28 +136,63 @@ function App() {
         />
         
         {/* Overlay UI */}
-        <div style={{ position: 'absolute', top: 16, left: 16, zIndex: 10, background: 'rgba(0,0,0,0.55)', padding: 16, borderRadius: 10, color: '#fff', width: isMenuMinimized ? 220 : 310, maxHeight: '90vh', overflowY: 'auto', transition: 'width 120ms ease' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: isMenuMinimized ? 0 : 16 }}>
-            <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>360° Evaluator</h1>
+        <div style={{ 
+          position: 'absolute', 
+          top: 20, 
+          left: 20, 
+          zIndex: 10, 
+          background: 'rgba(15, 23, 42, 0.75)', 
+          backdropFilter: 'blur(12px)',
+          padding: 20, 
+          borderRadius: 16, 
+          color: '#fff', 
+          width: isMenuMinimized ? 240 : 340, 
+          maxHeight: 'calc(100vh - 40px)', 
+          overflowY: 'auto', 
+          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          boxShadow: '0 4px 24px -1px rgba(0, 0, 0, 0.2)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: isMenuMinimized ? 0 : 20 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <img src="/logo.png" alt="Prism Logo" style={{ width: 32, height: 32, borderRadius: 8, objectFit: 'cover' }} />
+              <h1 style={{ fontSize: 18, fontWeight: 700, margin: 0, letterSpacing: '-0.02em', background: 'linear-gradient(to right, #fff, #94a3b8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                Prism 360°
+              </h1>
+            </div>
             <button
               onClick={() => setIsMenuMinimized((prev) => !prev)}
               style={{
-                background: '#374151',
-                color: '#fff',
-                border: '1px solid #4b5563',
-                borderRadius: 8,
+                background: 'rgba(255, 255, 255, 0.05)',
+                color: '#94a3b8',
+                border: 'none',
+                borderRadius: 6,
                 fontSize: 12,
                 padding: '6px 10px',
                 cursor: 'pointer',
+                transition: 'all 0.2s',
+                fontWeight: 500
               }}
             >
-              {isMenuMinimized ? 'Expandir' : 'Minimizar'}
+              {isMenuMinimized ? 'Show' : 'Hide'}
             </button>
           </div>
 
           {!isMenuMinimized && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <label style={{ cursor: 'pointer', background: '#2563eb', padding: '10px 12px', borderRadius: 8, fontSize: 13, textAlign: 'center', display: 'block' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <label style={{ 
+              cursor: 'pointer', 
+              background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', 
+              padding: '12px', 
+              borderRadius: 10, 
+              fontSize: 13, 
+              fontWeight: 600,
+              textAlign: 'center', 
+              display: 'block',
+              boxShadow: '0 2px 8px rgba(37, 99, 235, 0.25)',
+              transition: 'transform 0.1s',
+              border: '1px solid rgba(255,255,255,0.1)'
+            }}>
               Upload Image / Video
               <input 
                 type="file" 
@@ -177,15 +212,23 @@ function App() {
               />
             </label>
             
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <label style={{ fontSize: 12, color: '#d1d5db' }}>View Mode</label>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <label style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>View Mode</label>
               <select 
                 value={viewMode} 
                 onChange={(e) => setViewMode(e.target.value as ViewMode)}
-                style={{ background: '#374151', color: '#fff', borderRadius: 6, border: '1px solid #4b5563', padding: '8px 10px', fontSize: 13 }}
+                style={{ 
+                  background: 'rgba(0,0,0,0.3)', 
+                  color: '#f1f5f9', 
+                  borderRadius: 8, 
+                  border: '1px solid rgba(255,255,255,0.1)', 
+                  padding: '10px 12px', 
+                  fontSize: 13,
+                  outline: 'none',
+                  width: '100%'
+                }}
               >
                 <option value="spherical">Spherical (360°)</option>
-                <option value="flat">Flat (2D)</option>
                 <option value="equirectangular">Equirectangular (Plano)</option>
                 <option value="rectilinear-front">Rectilinear Front</option>
                 <option value="rectilinear-back">Rectilinear Back</option>
@@ -199,37 +242,37 @@ function App() {
                 setMediaType('image')
                 setMediaUrl('/default-panorama.png')
               }}
-              style={{ background: '#4b5563', color: '#fff', border: 'none', padding: '10px 12px', borderRadius: 8, fontSize: 12, cursor: 'pointer' }}
+              style={{ background: 'rgba(255,255,255,0.05)', color: '#cbd5e1', border: '1px solid rgba(255,255,255,0.05)', padding: '10px', borderRadius: 8, fontSize: 12, cursor: 'pointer', transition: 'background 0.2s' }}
             >
-              Cargar Imagen Default
+              Load Default Image
             </button>
 
             {viewMode === 'spherical' && (
               <>
               <button 
                 onClick={() => setShowGrid(!showGrid)}
-                  style={{ background: showGrid ? '#16a34a' : '#4b5563', color: '#fff', border: 'none', padding: '10px 12px', borderRadius: 8, fontSize: 13, cursor: 'pointer' }}
+                  style={{ background: showGrid ? 'rgba(34, 197, 94, 0.2)' : 'rgba(255,255,255,0.05)', color: showGrid ? '#4ade80' : '#cbd5e1', border: showGrid ? '1px solid rgba(34, 197, 94, 0.3)' : '1px solid rgba(255,255,255,0.05)', padding: '10px', borderRadius: 8, fontSize: 13, cursor: 'pointer', fontWeight: 500 }}
               >
                 {showGrid ? 'Hide Grid' : 'Show Grid'}
               </button>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                   <button
                     onClick={handleZoomOut}
-                    style={{ background: '#4b5563', color: '#fff', border: 'none', padding: '10px 12px', borderRadius: 8, fontSize: 13, cursor: 'pointer' }}
+                    style={{ background: 'rgba(255,255,255,0.05)', color: '#cbd5e1', border: '1px solid rgba(255,255,255,0.05)', padding: '10px', borderRadius: 8, fontSize: 13, cursor: 'pointer' }}
                   >
                     Zoom Out
                   </button>
                   <button
                     onClick={handleZoomIn}
-                    style={{ background: '#4b5563', color: '#fff', border: 'none', padding: '10px 12px', borderRadius: 8, fontSize: 13, cursor: 'pointer' }}
+                    style={{ background: 'rgba(255,255,255,0.05)', color: '#cbd5e1', border: '1px solid rgba(255,255,255,0.05)', padding: '10px', borderRadius: 8, fontSize: 13, cursor: 'pointer' }}
                   >
                     Zoom In
                   </button>
                 </div>
                 {showGrid && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, background: '#374151', padding: 10, borderRadius: 8 }}>
-                    <label style={{ fontSize: 12, color: '#d1d5db' }}>
-                      Transparencia sectores: {sectorOpacity.toFixed(2)}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12, background: 'rgba(0,0,0,0.2)', padding: 12, borderRadius: 10, border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <label style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      Sector Opacity: {sectorOpacity.toFixed(2)}
                     </label>
                     <input
                       type="range"
@@ -238,13 +281,13 @@ function App() {
                       step="0.01"
                       value={sectorOpacity}
                       onChange={(e) => setSectorOpacity(parseFloat(e.target.value))}
-                      style={{ width: '100%' }}
+                      style={{ width: '100%', accentColor: '#3b82f6' }}
                     />
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                       {(['front', 'right', 'back', 'left'] as const).map((sector) => (
                         <label
                           key={sector}
-                          style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#d1d5db', textTransform: 'uppercase' }}
+                          style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#cbd5e1', textTransform: 'capitalize' }}
                         >
                           {sector}
                           <input
@@ -253,7 +296,7 @@ function App() {
                             onChange={(e) =>
                               setSectorColors((prev) => ({ ...prev, [sector]: e.target.value }))
                             }
-                            style={{ width: 28, height: 20, border: 'none', background: 'transparent', padding: 0, cursor: 'pointer' }}
+                            style={{ width: 24, height: 24, border: 'none', background: 'transparent', padding: 0, cursor: 'pointer', borderRadius: 4 }}
                           />
                         </label>
                       ))}
@@ -263,23 +306,23 @@ function App() {
               </>
             )}
 
-            {(viewMode === 'flat' || viewMode === 'equirectangular') && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {viewMode === 'equirectangular' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <button 
                   onClick={() => setShowSinusoidalGrid(!showSinusoidalGrid)}
-                  style={{ background: showSinusoidalGrid ? '#16a34a' : '#4b5563', color: '#fff', border: 'none', padding: '10px 12px', borderRadius: 8, fontSize: 13, cursor: 'pointer' }}
+                  style={{ background: showSinusoidalGrid ? 'rgba(34, 197, 94, 0.2)' : 'rgba(255,255,255,0.05)', color: showSinusoidalGrid ? '#4ade80' : '#cbd5e1', border: showSinusoidalGrid ? '1px solid rgba(34, 197, 94, 0.3)' : '1px solid rgba(255,255,255,0.05)', padding: '10px', borderRadius: 8, fontSize: 13, cursor: 'pointer', fontWeight: 500 }}
                 >
                   {showSinusoidalGrid ? 'Hide Sinusoidal Grid' : 'Show Sinusoidal Grid'}
                 </button>
                 
                 {showSinusoidalGrid && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6, background: '#374151', padding: 10, borderRadius: 8 }}>
-                    <label style={{ fontSize: 12, color: '#d1d5db' }}>Grid Rotation (Face)</label>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 6 }}>
-                      <button onClick={() => setGridRotation(0)} style={{ background: gridRotation === 0 ? '#2563eb' : '#4b5563', color: '#fff', border: 'none', borderRadius: 6, fontSize: 11, padding: '6px 4px', cursor: 'pointer' }}>Front</button>
-                      <button onClick={() => setGridRotation(Math.PI/2)} style={{ background: gridRotation === Math.PI/2 ? '#2563eb' : '#4b5563', color: '#fff', border: 'none', borderRadius: 6, fontSize: 11, padding: '6px 4px', cursor: 'pointer' }}>Right</button>
-                      <button onClick={() => setGridRotation(Math.PI)} style={{ background: gridRotation === Math.PI ? '#2563eb' : '#4b5563', color: '#fff', border: 'none', borderRadius: 6, fontSize: 11, padding: '6px 4px', cursor: 'pointer' }}>Back</button>
-                      <button onClick={() => setGridRotation(Math.PI*1.5)} style={{ background: gridRotation === Math.PI*1.5 ? '#2563eb' : '#4b5563', color: '#fff', border: 'none', borderRadius: 6, fontSize: 11, padding: '6px 4px', cursor: 'pointer' }}>Left</button>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 12, background: 'rgba(0,0,0,0.2)', padding: 12, borderRadius: 10, border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <label style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Grid Rotation</label>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 4 }}>
+                      <button onClick={() => setGridRotation(0)} style={{ background: gridRotation === 0 ? '#3b82f6' : 'rgba(255,255,255,0.1)', color: '#fff', border: 'none', borderRadius: 4, fontSize: 10, padding: '6px 2px', cursor: 'pointer' }}>Front</button>
+                      <button onClick={() => setGridRotation(Math.PI/2)} style={{ background: gridRotation === Math.PI/2 ? '#3b82f6' : 'rgba(255,255,255,0.1)', color: '#fff', border: 'none', borderRadius: 4, fontSize: 10, padding: '6px 2px', cursor: 'pointer' }}>Right</button>
+                      <button onClick={() => setGridRotation(Math.PI)} style={{ background: gridRotation === Math.PI ? '#3b82f6' : 'rgba(255,255,255,0.1)', color: '#fff', border: 'none', borderRadius: 4, fontSize: 10, padding: '6px 2px', cursor: 'pointer' }}>Back</button>
+                      <button onClick={() => setGridRotation(Math.PI*1.5)} style={{ background: gridRotation === Math.PI*1.5 ? '#3b82f6' : 'rgba(255,255,255,0.1)', color: '#fff', border: 'none', borderRadius: 4, fontSize: 10, padding: '6px 2px', cursor: 'pointer' }}>Left</button>
                     </div>
                     <input 
                       type="range" 
@@ -288,9 +331,9 @@ function App() {
                       step="0.01" 
                       value={gridRotation} 
                       onChange={(e) => setGridRotation(parseFloat(e.target.value))}
-                      style={{ width: '100%', marginTop: 4 }}
+                      style={{ width: '100%', marginTop: 4, accentColor: '#3b82f6' }}
                     />
-                    <label style={{ fontSize: 12, color: '#d1d5db' }}>Densidad: {gridDensity}</label>
+                    <label style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Density: {gridDensity}</label>
                     <input
                       type="range"
                       min="4"
@@ -298,9 +341,9 @@ function App() {
                       step="1"
                       value={gridDensity}
                       onChange={(e) => setGridDensity(parseInt(e.target.value, 10))}
-                      style={{ width: '100%' }}
+                      style={{ width: '100%', accentColor: '#3b82f6' }}
                     />
-                    <label style={{ fontSize: 12, color: '#d1d5db' }}>FOV: {gridFov}°</label>
+                    <label style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>FOV: {gridFov}°</label>
                     <input
                       type="range"
                       min="60"
@@ -308,12 +351,12 @@ function App() {
                       step="1"
                       value={gridFov}
                       onChange={(e) => setGridFov(parseInt(e.target.value, 10))}
-                      style={{ width: '100%' }}
+                      style={{ width: '100%', accentColor: '#3b82f6' }}
                     />
                     {viewMode === 'equirectangular' && (
                       <>
-                        <label style={{ fontSize: 12, color: '#d1d5db' }}>
-                          Transparencia sectores: {sectorOpacity.toFixed(2)}
+                        <label style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                          Sector Opacity: {sectorOpacity.toFixed(2)}
                         </label>
                         <input
                           type="range"
@@ -322,13 +365,13 @@ function App() {
                           step="0.01"
                           value={sectorOpacity}
                           onChange={(e) => setSectorOpacity(parseFloat(e.target.value))}
-                          style={{ width: '100%' }}
+                          style={{ width: '100%', accentColor: '#3b82f6' }}
                         />
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                           {(['front', 'right', 'back', 'left'] as const).map((sector) => (
                             <label
                               key={sector}
-                              style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#d1d5db', textTransform: 'uppercase' }}
+                              style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#cbd5e1', textTransform: 'capitalize' }}
                             >
                               {sector}
                               <input
@@ -337,16 +380,16 @@ function App() {
                                 onChange={(e) =>
                                   setSectorColors((prev) => ({ ...prev, [sector]: e.target.value }))
                                 }
-                                style={{ width: 28, height: 20, border: 'none', background: 'transparent', padding: 0, cursor: 'pointer' }}
+                                style={{ width: 24, height: 24, border: 'none', background: 'transparent', padding: 0, cursor: 'pointer', borderRadius: 4 }}
                               />
                             </label>
                           ))}
                         </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                           {(['top', 'bottom'] as const).map((sector) => (
                             <label
                               key={sector}
-                              style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#d1d5db', textTransform: 'uppercase' }}
+                              style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: '#cbd5e1', textTransform: 'capitalize' }}
                             >
                               {sector}
                               <input
@@ -355,7 +398,7 @@ function App() {
                                 onChange={(e) =>
                                   setPolarColors((prev) => ({ ...prev, [sector]: e.target.value }))
                                 }
-                                style={{ width: 28, height: 20, border: 'none', background: 'transparent', padding: 0, cursor: 'pointer' }}
+                                style={{ width: 24, height: 24, border: 'none', background: 'transparent', padding: 0, cursor: 'pointer', borderRadius: 4 }}
                               />
                             </label>
                           ))}
@@ -369,7 +412,7 @@ function App() {
 
             <button 
               onClick={handleLogIssue}
-              style={{ background: '#dc2626', color: '#fff', border: 'none', padding: '10px 12px', borderRadius: 8, fontSize: 13, cursor: 'pointer', opacity: mediaUrl ? 1 : 0.6 }}
+              style={{ background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)', color: '#fff', border: 'none', padding: '12px', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: mediaUrl ? 1 : 0.6, boxShadow: '0 2px 8px rgba(220, 38, 38, 0.25)' }}
               disabled={!mediaUrl}
             >
               Log Issue
@@ -378,36 +421,36 @@ function App() {
             {issues.length > 0 && (
               <button 
                 onClick={exportIssues}
-                style={{ background: '#7c3aed', color: '#fff', border: 'none', padding: '10px 12px', borderRadius: 8, fontSize: 13, cursor: 'pointer' }}
+                style={{ background: 'rgba(124, 58, 237, 0.2)', color: '#a78bfa', border: '1px solid rgba(124, 58, 237, 0.3)', padding: '10px 12px', borderRadius: 8, fontSize: 13, cursor: 'pointer', transition: 'all 0.2s' }}
               >
                 Export Report ({issues.length})
               </button>
             )}
-          </div>
+            </div>
           )}
         </div>
 
         {/* Issue Logging Modal */}
         {isLogging && (
-          <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 20 }}>
-            <div style={{ background: '#1f2937', padding: 20, borderRadius: 10, width: 420 }}>
-              <h2 style={{ fontSize: 22, fontWeight: 700, color: '#fff', margin: '0 0 12px 0' }}>Log Issue</h2>
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 20, backdropFilter: 'blur(4px)' }}>
+            <div style={{ background: '#1e293b', padding: 24, borderRadius: 16, width: 420, border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)' }}>
+              <h2 style={{ fontSize: 20, fontWeight: 700, color: '#fff', margin: '0 0 16px 0' }}>Log Issue</h2>
               <textarea
-                style={{ width: '100%', height: 130, background: '#374151', color: '#fff', padding: 10, borderRadius: 8, border: '1px solid #4b5563', marginBottom: 14 }}
+                style={{ width: '100%', height: 130, background: '#0f172a', color: '#fff', padding: 12, borderRadius: 8, border: '1px solid #334155', marginBottom: 16, fontSize: 14, resize: 'none' }}
                 placeholder="Describe the issue..."
                 value={newIssueDesc}
                 onChange={(e) => setNewIssueDesc(e.target.value)}
               />
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
                 <button 
                   onClick={() => setIsLogging(false)}
-                  style={{ padding: '8px 12px', color: '#d1d5db', background: 'transparent', border: 'none', cursor: 'pointer' }}
+                  style={{ padding: '8px 16px', color: '#94a3b8', background: 'transparent', border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 500 }}
                 >
                   Cancel
                 </button>
                 <button 
                   onClick={saveIssue}
-                  style={{ background: '#2563eb', color: '#fff', border: 'none', padding: '8px 12px', borderRadius: 8, cursor: 'pointer' }}
+                  style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '8px 20px', borderRadius: 8, cursor: 'pointer', fontSize: 14, fontWeight: 600 }}
                 >
                   Save
                 </button>
@@ -419,17 +462,17 @@ function App() {
 
       {/* Sidebar for Issues */}
       {issues.length > 0 && (
-        <div style={{ width: 320, background: '#1f2937', borderLeft: '1px solid #374151', padding: 16, overflowY: 'auto' }}>
-          <h2 style={{ fontSize: 20, fontWeight: 700, color: '#fff', margin: '0 0 12px 0' }}>Logged Issues</h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ width: 320, background: '#0f172a', borderLeft: '1px solid #1e293b', padding: 20, overflowY: 'auto' }}>
+          <h2 style={{ fontSize: 18, fontWeight: 700, color: '#fff', margin: '0 0 16px 0' }}>Logged Issues</h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {issues.map((issue) => (
               <div 
                 key={issue.id}
-                style={{ background: '#374151', padding: 10, borderRadius: 8, cursor: 'pointer' }}
+                style={{ background: '#1e293b', padding: 12, borderRadius: 10, cursor: 'pointer', border: '1px solid #334155', transition: 'border-color 0.2s' }}
                 onClick={() => restoreView(issue)}
               >
-                <p style={{ fontSize: 13, color: '#d1d5db', margin: 0 }}>{issue.description}</p>
-                <span style={{ fontSize: 11, color: '#9ca3af', display: 'block', marginTop: 4 }}>
+                <p style={{ fontSize: 13, color: '#e2e8f0', margin: 0, lineHeight: 1.5 }}>{issue.description}</p>
+                <span style={{ fontSize: 11, color: '#64748b', display: 'block', marginTop: 8, fontWeight: 500 }}>
                   Click to view
                 </span>
               </div>
