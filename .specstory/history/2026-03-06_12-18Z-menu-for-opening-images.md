@@ -16381,3 +16381,1264 @@ npm run dev
 
 ---
 
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/eudesz/.cursor/projects/Users-eudesz-Documents-Micro1-Shelf-Examples-360-video-fresh/terminals/771807.txt</summary>
+
+</details>
+</tool-use>
+
+---
+
+I have closed all running ports and restarted the server.
+
+The server is now running on:
+`http://localhost:5173/`
+
+Note: I had to downgrade `vite` and `@vitejs/plugin-react` to versions compatible with your Node.js version (v18.20.5).
+
+---
+
+_**User**_
+
+commit
+
+---
+
+_**Agent (model gemini-3-pro, mode Agent)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: git status</summary>
+
+```bash
+git status
+```
+
+```
+On branch main
+Changes not staged for commit:
+  (use "git add &lt;file&gt;..." to update what will be committed)
+  (use "git restore &lt;file&gt;..." to discard changes in working directory)
+	modified:   src/App.tsx
+
+Untracked files:
+  (use "git add &lt;file&gt;..." to include in what will be committed)
+	.cursorindexingignore
+	.gitignore
+	.specstory/
+	360_images/
+	README.md
+	eslint.config.js
+	index.html
+	package-lock.json
+	package.json
+	public/360_images/
+	public/default-panorama.png
+	public/grid-preview-rot90.png
+	public/grid-preview.png
+	public/vite.svg
+	render_grid_preview.py
+	src/App.css
+	src/assets/
+	src/index.css
+	src/main.tsx
+	tsconfig.app.json
+	tsconfig.json
+	tsconfig.node.json
+	videoframe_0 (2).png
+	videoframe_3.png
+	videoframe_4.png
+	vite.config.ts
+
+no changes added to commit (use "git add" and/or "git commit -a")
+
+```
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: git diff</summary>
+
+```bash
+git diff
+```
+
+```
+diff --git a/src/App.tsx b/src/App.tsx
+index c0bda33..2d088aa 100644
+--- a/src/App.tsx
++++ b/src/App.tsx
+@@ -16,8 +16,8 @@ interface Issue {
+ function App() {
+   const [mediaUrl, setMediaUrl] = useState&lt;string | null&gt;('/default-panorama.png')
+   const [mediaType, setMediaType] = useState&lt;'image' | 'video'&gt;('image')
+-  const [showGrid, setShowGrid] = useState(false)
+-  const [showSinusoidalGrid, setShowSinusoidalGrid] = useState(false)
++  const [showGrid, setShowGrid] = useState(true)
++  const [showSinusoidalGrid, setShowSinusoidalGrid] = useState(true)
+   const [gridRotation, setGridRotation] = useState(0)
+   const [gridDensity, setGridDensity] = useState(8)
+   const [gridFov, setGridFov] = useState(90)
+@@ -32,6 +32,17 @@ function App() {
+     top: '#8b5cf6',
+     bottom: '#0ea5e9',
+   })
++
++  const SAMPLE_IMAGES = [
++    { name: 'Default Panorama', url: '/default-panorama.png' },
++    { name: 'Image 1', url: '/360_images/11bdd45e-5276-4f9c-9e50-e2cd5b4c59ae.png' },
++    { name: 'Image 2', url: '/360_images/2512f5ec-c51f-4e1d-8c8a-be05193dc2f9.png' },
++    { name: 'Image 3', url: '/360_images/3f59fb4a-df51-4104-8ce0-a87305b0334b.png' },
++    { name: 'Image 4', url: '/360_images/7d64f729-3efb-4cdd-a374-684ddde7d51a.png' },
++    { name: 'Image 5', url: '/360_images/98f05e48-0c4b-4a97-858e-55ba75be6336.png' },
++    { name: 'Image 6', url: '/360_images/dd156928-99d4-409b-8fe6-5b5e01468487.png' },
++    { name: 'Image 7', url: '/360_images/e8347f4c-10c4-4699-86ee-b0d841299174.png' },
++  ]
+   const [viewMode, setViewMode] = useState&lt;ViewMode&gt;('spherical')
+   const [issues, setIssues] = useState&lt;Issue[]&gt;([])
+   const [isLogging, setIsLogging] = useState(false)
+@@ -237,12 +248,42 @@ function App() {
+               &lt;/select&gt;
+             &lt;/div&gt;
+ 
++            &lt;div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}&gt;
++              &lt;label style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}&gt;Select Image&lt;/label&gt;
++              &lt;select 
++                onChange={(e) =&gt; {
++                  if (e.target.value) {
++                    setMediaType('image')
++                    setMediaUrl(e.target.value)
++                  }
++                }}
++                style={{ 
++                  background: 'rgba(0,0,0,0.3)', 
++                  color: '#f1f5f9', 
++                  borderRadius: 8, 
++                  border: '1px solid rgba(255,255,255,0.1)', 
++                  padding: '10px 12px', 
++                  fontSize: 13,
++                  outline: 'none',
++                  width: '100%'
++                }}
++                value={mediaUrl || ''}
++              &gt;
++                &lt;option value="" disabled&gt;Select an image...&lt;/option&gt;
++                {SAMPLE_IMAGES.map((img) =&gt; (
++                  &lt;option key={img.url} value={img.url}&gt;
++                    {img.name}
++                  &lt;/option&gt;
++                ))}
++              &lt;/select&gt;
++            &lt;/div&gt;
++
+             &lt;button 
+               onClick={() =&gt; {
+                 setMediaType('image')
+                 setMediaUrl('/default-panorama.png')
+               }}
+-              style={{ background: 'rgba(255,255,255,0.05)', color: '#cbd5e1', border: '1px solid rgba(255,255,255,0.05)', padding: '10px', borderRadius: 8, fontSize: 12, cursor: 'pointer', transition: 'background 0.2s' }}
++              style={{ background: 'rgba(255,255,255,0.05)', color: '#cbd5e1', border: '1px solid rgba(255,255,255,0.05)', padding: '10px', borderRadius: 8, fontSize: 12, cursor: 'pointer', transition: 'background 0.2s', display: 'none' }}
+             &gt;
+               Load Default Image
+             &lt;/button&gt;
+
+```
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: git log -n 5</summary>
+
+```bash
+git log -n 5
+```
+
+```
+commit 740a12590e787010906601b5cf95592f7a39471d
+Author: Eudes Benitez &lt;eudesz@gmail.com&gt;
+Date:   Fri Mar 6 09:15:40 2026 -0300
+
+    Update UI with professional styling, add logo, and remove legacy flat mode
+    
+    Made-with: Cursor
+
+commit 6a6bd8bdbc67226ff41382554664435fb4c7f6f9
+Author: Eudes Benitez &lt;eudesz@gmail.com&gt;
+Date:   Fri Mar 6 00:16:39 2026 -0300
+
+    Enhance equirectangular polar sectors with curved boundaries and guide lines.
+    
+    This introduces configurable top/bottom polar colors, curved polar clipping, and three anchored guide curves in TOP and BOTTOM to improve geometric readability while preserving sector continuity.
+    
+    Made-with: Cursor
+
+commit a95740b499a8e50fe9c6e43bb2188794a4adfa42
+Author: Eudes Benitez &lt;eudesz@gmail.com&gt;
+Date:   Thu Mar 5 23:14:41 2026 -0300
+
+    Add sector styling controls across spherical and equirectangular grids.
+    
+    This adds per-sector color customization, shared opacity controls, spherical zoom buttons, and a collapsible menu so face overlays remain readable while inspecting the underlying media.
+    
+    Made-with: Cursor
+
+commit 7035e21ea9451bd4b8dd147df10053d2fbffb174
+Author: Eudes Benitez &lt;eudesz@gmail.com&gt;
+Date:   Thu Mar 5 22:55:42 2026 -0300
+
+    Add video-capable equirectangular mode and align spherical references.
+    
+    This updates media loading to support video textures and synchronizes front/longitude orientation so the spherical grid, sector labels, and initial view start at FRONT 0°.
+    
+    Made-with: Cursor
+
+```
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: git add . && git commit --trailer "Made-with: Cursor" -m "$(cat <<'EOF'
+Add image selection menu and update dependencies
+
+- Add dropdown menu to select 360 images from public/360_images
+- Add sample 360 images to public directory
+- Downgrade vite and @vitejs/plugin-react for Node.js 18 compatibility
+- Enable grid and sinusoidal grid by default
+
+EOF
+)"</summary>
+
+```bash
+git add . && git commit --trailer "Made-with: Cursor" -m "$(cat <<'EOF'
+Add image selection menu and update dependencies
+
+- Add dropdown menu to select 360 images from public/360_images
+- Add sample 360 images to public directory
+- Downgrade vite and @vitejs/plugin-react for Node.js 18 compatibility
+- Enable grid and sinusoidal grid by default
+
+EOF
+)"
+```
+
+```
+[main 04991bd] Add image selection menu and update dependencies
+ 40 files changed, 20812 insertions(+), 3 deletions(-)
+ create mode 100644 .cursorindexingignore
+ create mode 100644 .gitignore
+ create mode 100644 .specstory/.gitignore
+ create mode 100644 .specstory/history/2026-03-06_12-18Z-menu-for-opening-images.md
+ create mode 100644 360_images/11bdd45e-5276-4f9c-9e50-e2cd5b4c59ae.png
+ create mode 100644 360_images/2512f5ec-c51f-4e1d-8c8a-be05193dc2f9.png
+ create mode 100644 360_images/3f59fb4a-df51-4104-8ce0-a87305b0334b.png
+ create mode 100644 360_images/7d64f729-3efb-4cdd-a374-684ddde7d51a.png
+ create mode 100644 360_images/98f05e48-0c4b-4a97-858e-55ba75be6336.png
+ create mode 100644 360_images/dd156928-99d4-409b-8fe6-5b5e01468487.png
+ create mode 100644 360_images/e8347f4c-10c4-4699-86ee-b0d841299174.png
+ create mode 100644 README.md
+ create mode 100644 eslint.config.js
+ create mode 100644 index.html
+ create mode 100644 package-lock.json
+ create mode 100644 package.json
+ create mode 100644 public/360_images/11bdd45e-5276-4f9c-9e50-e2cd5b4c59ae.png
+ create mode 100644 public/360_images/2512f5ec-c51f-4e1d-8c8a-be05193dc2f9.png
+ create mode 100644 public/360_images/3f59fb4a-df51-4104-8ce0-a87305b0334b.png
+ create mode 100644 public/360_images/7d64f729-3efb-4cdd-a374-684ddde7d51a.png
+ create mode 100644 public/360_images/98f05e48-0c4b-4a97-858e-55ba75be6336.png
+ create mode 100644 public/360_images/dd156928-99d4-409b-8fe6-5b5e01468487.png
+ create mode 100644 public/360_images/e8347f4c-10c4-4699-86ee-b0d841299174.png
+ create mode 100644 public/default-panorama.png
+ create mode 100644 public/grid-preview-rot90.png
+ create mode 100644 public/grid-preview.png
+ create mode 100644 public/vite.svg
+ create mode 100644 render_grid_preview.py
+ create mode 100644 src/App.css
+ create mode 100644 src/assets/react.svg
+ create mode 100644 src/index.css
+ create mode 100644 src/main.tsx
+ create mode 100644 tsconfig.app.json
+ create mode 100644 tsconfig.json
+ create mode 100644 tsconfig.node.json
+ create mode 100644 videoframe_0 (2).png
+ create mode 100644 videoframe_3.png
+ create mode 100644 videoframe_4.png
+ create mode 100644 vite.config.ts
+
+```
+</details>
+</tool-use>
+
+---
+
+I have committed the changes, including the new image selection menu, the sample images in `public/360_images`, and the dependency updates for Node.js compatibility.
+
+---
+
+_**User**_
+
+crear un .md con la documentacion de la arquitectura de la app, que es , para que se usa, como se deploya, etc
+todo en ingles
+
+---
+
+_**Agent (model gemini-3-pro, mode Agent)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: ls -R src/components</summary>
+
+```bash
+ls -R src/components
+```
+
+```
+EquirectangularGrid.tsx
+Viewer.tsx
+
+```
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: src/components/Viewer.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: src/components/EquirectangularGrid.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: vite.config.ts</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: ARCHITECTURE.md</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+I have created the `ARCHITECTURE.md` file with the requested documentation in English. It covers the application overview, purpose, tech stack, detailed architecture, and deployment instructions.
+
+---
+
+_**User**_
+
+commit
+
+---
+
+_**Agent (model gemini-3-pro, mode Agent)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: git status</summary>
+
+```bash
+git status
+```
+
+```
+On branch main
+Changes not staged for commit:
+  (use "git add &lt;file&gt;..." to update what will be committed)
+  (use "git restore &lt;file&gt;..." to discard changes in working directory)
+	modified:   .specstory/history/2026-03-06_12-18Z-menu-for-opening-images.md
+
+Untracked files:
+  (use "git add &lt;file&gt;..." to include in what will be committed)
+	ARCHITECTURE.md
+
+no changes added to commit (use "git add" and/or "git commit -a")
+
+```
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: git diff</summary>
+
+```bash
+git diff
+```
+
+```
+diff --git a/.specstory/history/2026-03-06_12-18Z-menu-for-opening-images.md b/.specstory/history/2026-03-06_12-18Z-menu-for-opening-images.md
+index 23c4666..dc80669 100644
+--- a/.specstory/history/2026-03-06_12-18Z-menu-for-opening-images.md
++++ b/.specstory/history/2026-03-06_12-18Z-menu-for-opening-images.md
+@@ -16381,3 +16381,361 @@ npm run dev
+ 
+ ---
+ 
++&lt;tool-use data-tool-type="read" data-tool-name="read_file_v2"&gt;
++&lt;details&gt;&lt;summary&gt;Tool use: **read_file_v2** • Read file: /Users/eudesz/.cursor/projects/Users-eudesz-Documents-Micro1-Shelf-Examples-360-video-fresh/terminals/771807.txt&lt;/summary&gt;
++
++&lt;/details&gt;
++&lt;/tool-use&gt;
++
++---
++
++I have closed all running ports and restarted the server.
++
++The server is now running on:
++&#96;http://localhost:5173/&#96;
++
++Note: I had to downgrade &#96;vite&#96; and &#96;@vitejs/plugin-react&#96; to versions compatible with your Node.js version (v18.20.5).
++
++---
++
++_**User**_
++
++commit
++
++---
++
++_**Agent (model gemini-3-pro, mode Agent)**_
++
++&lt;tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"&gt;
++&lt;details&gt;&lt;summary&gt;Tool use: **run_terminal_command_v2** • Run command: git status&lt;/summary&gt;
++
++&#96;&#96;&#96;bash
++git status
++&#96;&#96;&#96;
++
++&#96;&#96;&#96;
++On branch main
++Changes not staged for commit:
++  (use "git add &amp;lt;file&amp;gt;..." to update what will be committed)
++  (use "git restore &amp;lt;file&amp;gt;..." to discard changes in working directory)
++	modified:   src/App.tsx
++
++Untracked files:
++  (use "git add &amp;lt;file&amp;gt;..." to include in what will be committed)
++	.cursorindexingignore
++	.gitignore
++	.specstory/
++	360_images/
++	README.md
++	eslint.config.js
++	index.html
++	package-lock.json
++	package.json
++	public/360_images/
++	public/default-panorama.png
++	public/grid-preview-rot90.png
++	public/grid-preview.png
++	public/vite.svg
++	render_grid_preview.py
++	src/App.css
++	src/assets/
++	src/index.css
++	src/main.tsx
++	tsconfig.app.json
++	tsconfig.json
++	tsconfig.node.json
++	videoframe_0 (2).png
++	videoframe_3.png
++	videoframe_4.png
++	vite.config.ts
++
++no changes added to commit (use "git add" and/or "git commit -a")
++
++&#96;&#96;&#96;
++&lt;/details&gt;
++&lt;/tool-use&gt;
++
++---
++
++&lt;tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"&gt;
++&lt;details&gt;&lt;summary&gt;Tool use: **run_terminal_command_v2** • Run command: git diff&lt;/summary&gt;
++
++&#96;&#96;&#96;bash
++git diff
++&#96;&#96;&#96;
++
++&#96;&#96;&#96;
++diff --git a/src/App.tsx b/src/App.tsx
++index c0bda33..2d088aa 100644
++--- a/src/App.tsx
+++++ b/src/App.tsx
++@@ -16,8 +16,8 @@ interface Issue {
++ function App() {
++   const [mediaUrl, setMediaUrl] = useState&amp;lt;string | null&amp;gt;('/default-panorama.png')
++   const [mediaType, setMediaType] = useState&amp;lt;'image' | 'video'&amp;gt;('image')
++-  const [showGrid, setShowGrid] = useState(false)
++-  const [showSinusoidalGrid, setShowSinusoidalGrid] = useState(false)
+++  const [showGrid, setShowGrid] = useState(true)
+++  const [showSinusoidalGrid, setShowSinusoidalGrid] = useState(true)
++   const [gridRotation, setGridRotation] = useState(0)
++   const [gridDensity, setGridDensity] = useState(8)
++   const [gridFov, setGridFov] = useState(90)
++@@ -32,6 +32,17 @@ function App() {
++     top: '#8b5cf6',
++     bottom: '#0ea5e9',
++   })
+++
+++  const SAMPLE_IMAGES = [
+++    { name: 'Default Panorama', url: '/default-panorama.png' },
+++    { name: 'Image 1', url: '/360_images/11bdd45e-5276-4f9c-9e50-e2cd5b4c59ae.png' },
+++    { name: 'Image 2', url: '/360_images/2512f5ec-c51f-4e1d-8c8a-be05193dc2f9.png' },
+++    { name: 'Image 3', url: '/360_images/3f59fb4a-df51-4104-8ce0-a87305b0334b.png' },
+++    { name: 'Image 4', url: '/360_images/7d64f729-3efb-4cdd-a374-684ddde7d51a.png' },
+++    { name: 'Image 5', url: '/360_images/98f05e48-0c4b-4a97-858e-55ba75be6336.png' },
+++    { name: 'Image 6', url: '/360_images/dd156928-99d4-409b-8fe6-5b5e01468487.png' },
+++    { name: 'Image 7', url: '/360_images/e8347f4c-10c4-4699-86ee-b0d841299174.png' },
+++  ]
++   const [viewMode, setViewMode] = useState&amp;lt;ViewMode&amp;gt;('spherical')
++   const [issues, setIssues] = useState&amp;lt;Issue[]&amp;gt;([])
++   const [isLogging, setIsLogging] = useState(false)
++@@ -237,12 +248,42 @@ function App() {
++               &amp;lt;/select&amp;gt;
++             &amp;lt;/div&amp;gt;
++ 
+++            &amp;lt;div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}&amp;gt;
+++              &amp;lt;label style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}&amp;gt;Select Image&amp;lt;/label&amp;gt;
+++              &amp;lt;select 
+++                onChange={(e) =&amp;gt; {
+++                  if (e.target.value) {
+++                    setMediaType('image')
+++                    setMediaUrl(e.target.value)
+++                  }
+++                }}
+++                style={{ 
+++                  background: 'rgba(0,0,0,0.3)', 
+++                  color: '#f1f5f9', 
+++                  borderRadius: 8, 
+++                  border: '1px solid rgba(255,255,255,0.1)', 
+++                  padding: '10px 12px', 
+++                  fontSize: 13,
+++                  outline: 'none',
+++                  width: '100%'
+++                }}
+++                value={mediaUrl || ''}
+++              &amp;gt;
+++                &amp;lt;option value="" disabled&amp;gt;Select an image...&amp;lt;/option&amp;gt;
+++                {SAMPLE_IMAGES.map((img) =&amp;gt; (
+++                  &amp;lt;option key={img.url} value={img.url}&amp;gt;
+++                    {img.name}
+++                  &amp;lt;/option&amp;gt;
+++                ))}
+++              &amp;lt;/select&amp;gt;
+++            &amp;lt;/div&amp;gt;
+++
++             &amp;lt;button 
++               onClick={() =&amp;gt; {
++                 setMediaType('image')
++                 setMediaUrl('/default-panorama.png')
++               }}
++-              style={{ background: 'rgba(255,255,255,0.05)', color: '#cbd5e1', border: '1px solid rgba(255,255,255,0.05)', padding: '10px', borderRadius: 8, fontSize: 12, cursor: 'pointer', transition: 'background 0.2s' }}
+++              style={{ background: 'rgba(255,255,255,0.05)', color: '#cbd5e1', border: '1px solid rgba(255,255,255,0.05)', padding: '10px', borderRadius: 8, fontSize: 12, cursor: 'pointer', transition: 'background 0.2s', display: 'none' }}
++             &amp;gt;
++               Load Default Image
++             &amp;lt;/button&amp;gt;
++
++&#96;&#96;&#96;
++&lt;/details&gt;
++&lt;/tool-use&gt;
++
++---
++
++&lt;tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"&gt;
++&lt;details&gt;&lt;summary&gt;Tool use: **run_terminal_command_v2** • Run command: git log -n 5&lt;/summary&gt;
++
++&#96;&#96;&#96;bash
++git log -n 5
++&#96;&#96;&#96;
++
++&#96;&#96;&#96;
++commit 740a12590e787010906601b5cf95592f7a39471d
++Author: Eudes Benitez &amp;lt;eudesz@gmail.com&amp;gt;
++Date:   Fri Mar 6 09:15:40 2026 -0300
++
++    Update UI with professional styling, add logo, and remove legacy flat mode
++    
++    Made-with: Cursor
++
++commit 6a6bd8bdbc67226ff41382554664435fb4c7f6f9
++Author: Eudes Benitez &amp;lt;eudesz@gmail.com&amp;gt;
++Date:   Fri Mar 6 00:16:39 2026 -0300
++
++    Enhance equirectangular polar sectors with curved boundaries and guide lines.
++    
++    This introduces configurable top/bottom polar colors, curved polar clipping, and three anchored guide curves in TOP and BOTTOM to improve geometric readability while preserving sector continuity.
++    
++    Made-with: Cursor
++
++commit a95740b499a8e50fe9c6e43bb2188794a4adfa42
++Author: Eudes Benitez &amp;lt;eudesz@gmail.com&amp;gt;
++Date:   Thu Mar 5 23:14:41 2026 -0300
++
++    Add sector styling controls across spherical and equirectangular grids.
++    
++    This adds per-sector color customization, shared opacity controls, spherical zoom buttons, and a collapsible menu so face overlays remain readable while inspecting the underlying media.
++    
++    Made-with: Cursor
++
++commit 7035e21ea9451bd4b8dd147df10053d2fbffb174
++Author: Eudes Benitez &amp;lt;eudesz@gmail.com&amp;gt;
++Date:   Thu Mar 5 22:55:42 2026 -0300
++
++    Add video-capable equirectangular mode and align spherical references.
++    
++    This updates media loading to support video textures and synchronizes front/longitude orientation so the spherical grid, sector labels, and initial view start at FRONT 0°.
++    
++    Made-with: Cursor
++
++&#96;&#96;&#96;
++&lt;/details&gt;
++&lt;/tool-use&gt;
++
++---
++
++&lt;tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"&gt;
++&lt;details&gt;&lt;summary&gt;Tool use: **run_terminal_command_v2** • Run command: git add . &amp;&amp; git commit --trailer "Made-with: Cursor" -m "$(cat &lt;&lt;'EOF'
++Add image selection menu and update dependencies
++
++- Add dropdown menu to select 360 images from public/360_images
++- Add sample 360 images to public directory
++- Downgrade vite and @vitejs/plugin-react for Node.js 18 compatibility
++- Enable grid and sinusoidal grid by default
++
++EOF
++)"&lt;/summary&gt;
++
++&#96;&#96;&#96;bash
++git add . &amp;&amp; git commit --trailer "Made-with: Cursor" -m "$(cat &lt;&lt;'EOF'
++Add image selection menu and update dependencies
++
++- Add dropdown menu to select 360 images from public/360_images
++- Add sample 360 images to public directory
++- Downgrade vite and @vitejs/plugin-react for Node.js 18 compatibility
++- Enable grid and sinusoidal grid by default
++
++EOF
++)"
++&#96;&#96;&#96;
++
++&#96;&#96;&#96;
++[main 04991bd] Add image selection menu and update dependencies
++ 40 files changed, 20812 insertions(+), 3 deletions(-)
++ create mode 100644 .cursorindexingignore
++ create mode 100644 .gitignore
++ create mode 100644 .specstory/.gitignore
++ create mode 100644 .specstory/history/2026-03-06_12-18Z-menu-for-opening-images.md
++ create mode 100644 360_images/11bdd45e-5276-4f9c-9e50-e2cd5b4c59ae.png
++ create mode 100644 360_images/2512f5ec-c51f-4e1d-8c8a-be05193dc2f9.png
++ create mode 100644 360_images/3f59fb4a-df51-4104-8ce0-a87305b0334b.png
++ create mode 100644 360_images/7d64f729-3efb-4cdd-a374-684ddde7d51a.png
++ create mode 100644 360_images/98f05e48-0c4b-4a97-858e-55ba75be6336.png
++ create mode 100644 360_images/dd156928-99d4-409b-8fe6-5b5e01468487.png
++ create mode 100644 360_images/e8347f4c-10c4-4699-86ee-b0d841299174.png
++ create mode 100644 README.md
++ create mode 100644 eslint.config.js
++ create mode 100644 index.html
++ create mode 100644 package-lock.json
++ create mode 100644 package.json
++ create mode 100644 public/360_images/11bdd45e-5276-4f9c-9e50-e2cd5b4c59ae.png
++ create mode 100644 public/360_images/2512f5ec-c51f-4e1d-8c8a-be05193dc2f9.png
++ create mode 100644 public/360_images/3f59fb4a-df51-4104-8ce0-a87305b0334b.png
++ create mode 100644 public/360_images/7d64f729-3efb-4cdd-a374-684ddde7d51a.png
++ create mode 100644 public/360_images/98f05e48-0c4b-4a97-858e-55ba75be6336.png
++ create mode 100644 public/360_images/dd156928-99d4-409b-8fe6-5b5e01468487.png
++ create mode 100644 public/360_images/e8347f4c-10c4-4699-86ee-b0d841299174.png
++ create mode 100644 public/default-panorama.png
++ create mode 100644 public/grid-preview-rot90.png
++ create mode 100644 public/grid-preview.png
++ create mode 100644 public/vite.svg
++ create mode 100644 render_grid_preview.py
++ create mode 100644 src/App.css
++ create mode 100644 src/assets/react.svg
++ create mode 100644 src/index.css
++ create mode 100644 src/main.tsx
++ create mode 100644 tsconfig.app.json
++ create mode 100644 tsconfig.json
++ create mode 100644 tsconfig.node.json
++ create mode 100644 videoframe_0 (2).png
++ create mode 100644 videoframe_3.png
++ create mode 100644 videoframe_4.png
++ create mode 100644 vite.config.ts
++
++&#96;&#96;&#96;
++&lt;/details&gt;
++&lt;/tool-use&gt;
++
++---
++
++I have committed the changes, including the new image selection menu, the sample images in &#96;public/360_images&#96;, and the dependency updates for Node.js compatibility.
++
++---
++
++_**User**_
++
++crear un .md con la documentacion de la arquitectura de la app, que es , para que se usa, como se deploya, etc
++todo en ingles
++
++---
++
++_**Agent (model gemini-3-pro, mode Agent)**_
++
++&lt;tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2"&gt;
++&lt;details&gt;&lt;summary&gt;Tool use: **run_terminal_command_v2** • Run command: ls -R src/components&lt;/summary&gt;
++
++&#96;&#96;&#96;bash
++ls -R src/components
++&#96;&#96;&#96;
++
++&#96;&#96;&#96;
++EquirectangularGrid.tsx
++Viewer.tsx
++
++&#96;&#96;&#96;
++&lt;/details&gt;
++&lt;/tool-use&gt;
++
++---
++
++&lt;tool-use data-tool-type="read" data-tool-name="read_file_v2"&gt;
++&lt;details&gt;&lt;summary&gt;Tool use: **read_file_v2** • Read file: src/components/Viewer.tsx&lt;/summary&gt;
++
++&lt;/details&gt;
++&lt;/tool-use&gt;
++
++---
++
++&lt;tool-use data-tool-type="read" data-tool-name="read_file_v2"&gt;
++&lt;details&gt;&lt;summary&gt;Tool use: **read_file_v2** • Read file: src/components/EquirectangularGrid.tsx&lt;/summary&gt;
++
++&lt;/details&gt;
++&lt;/tool-use&gt;
++
++---
++
++&lt;tool-use data-tool-type="read" data-tool-name="read_file_v2"&gt;
++&lt;details&gt;&lt;summary&gt;Tool use: **read_file_v2** • Read file: vite.config.ts&lt;/summary&gt;
++
++&lt;/details&gt;
++&lt;/tool-use&gt;
++
++---
++
++&lt;tool-use data-tool-type="write" data-tool-name="edit_file_v2"&gt;
++
++&lt;details&gt;&lt;summary&gt;Tool use: **edit_file_v2** • Edit file: ARCHITECTURE.md&lt;/summary&gt;
++
++&lt;/details&gt;
++
++&lt;/tool-use&gt;
++
++---
++
+
+```
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: git add ARCHITECTURE.md && git commit --trailer "Made-with: Cursor" -m "$(cat <<'EOF'
+Add ARCHITECTURE.md documentation
+
+- Add comprehensive documentation about the application architecture
+- Include overview, purpose, tech stack, and directory structure
+- Add deployment and development instructions
+
+EOF
+)"</summary>
+
+```bash
+git add ARCHITECTURE.md && git commit --trailer "Made-with: Cursor" -m "$(cat <<'EOF'
+Add ARCHITECTURE.md documentation
+
+- Add comprehensive documentation about the application architecture
+- Include overview, purpose, tech stack, and directory structure
+- Add deployment and development instructions
+
+EOF
+)"
+```
+
+```
+[main 6c727dc] Add ARCHITECTURE.md documentation
+ 1 file changed, 113 insertions(+)
+ create mode 100644 ARCHITECTURE.md
+
+```
+</details>
+</tool-use>
+
+---
+
+I have committed the `ARCHITECTURE.md` file with the documentation.
+
+---
+
+_**User**_
+
+ahora tengo una consulta, no modificar nada
+
+podemos cargar videos mp4 en lugar de imagenes?
+
+---
+
+_**Agent (model gemini-3-pro, mode Agent)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: src/App.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: src/components/Viewer.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+Sí, **ya es posible cargar videos MP4** sin modificar nada en el código actual.
+
+La aplicación ya tiene implementada la lógica para detectar y reproducir videos. Puedes hacerlo de dos formas:
+
+1.  **Arrastrar y Soltar (Drag & Drop):**
+    Simplemente arrastra un archivo `.mp4` (o `.webm`) directamente sobre la ventana del visor. La aplicación detectará que es un video y lo reproducirá en bucle automáticamente.
+
+2.  **Botón de Upload:**
+    En el menú lateral, haz clic en el botón azul **"Upload Image / Video"**. Este botón ya acepta tanto imágenes como videos. Al seleccionar un MP4, se cargará en el visor.
+
+**Nota:** El menú desplegable "Select Image" que agregamos recientemente solo lista las imágenes de ejemplo que están en la carpeta, pero para cargar tus propios videos, usa cualquiera de los dos métodos anteriores.
+
+---
+
+_**User**_
+
+para video no tiene los controles de play/stop/pause
+
+---
+
+_**Agent (model gemini-3-pro, mode Agent)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: src/components/Viewer.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: src/App.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: src/components/Viewer.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: src/components/Viewer.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: src/components/Viewer.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: src/App.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: src/App.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="unknown" data-tool-name="read_lints">
+<details>
+<summary>Tool use: **read_lints**</summary>
+
+
+Parameters:
+
+```json
+{
+  "paths": [
+    "src/App.tsx",
+    "src/components/Viewer.tsx"
+  ]
+}
+```
+Result:
+
+```json
+{
+  "linterErrorsByFile": [
+    {
+      "relativeWorkspacePath": "src/App.tsx"
+    },
+    {
+      "relativeWorkspacePath": "src/components/Viewer.tsx"
+    }
+  ]
+}
+```
+Status: **completed**
+
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: src/App.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+He agregado controles de video completos a la interfaz.
+
+Ahora, cuando cargues un video (arrastrando o subiendo), aparecerá un nuevo panel de control en el menú lateral con:
+1.  **Botón Play/Pause**: Para detener y reanudar el video.
+2.  **Barra de progreso**: Una línea de tiempo deslizable para buscar (seek) cualquier punto del video.
+3.  **Tiempo**: Muestra el tiempo actual y la duración total (ej: `0:12 / 1:45`).
+
+Estos controles solo son visibles cuando el tipo de medio es 'video'.
+
+---
+
+_**User**_
+
+reiniciar los servers, sale todo blanco
+
+---
+
+_**Agent (model gemini-3-pro, mode Agent)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: lsof -i :5173</summary>
+
+```bash
+lsof -i :5173
+```
+
+```
+COMMAND     PID   USER   FD   TYPE             DEVICE SIZE/OFF NODE NAME
+Google      817 eudesz   35u  IPv4 0x1354daf972032403      0t0  TCP localhost:55520-&gt;localhost:5173 (ESTABLISHED)
+Cursor     1931 eudesz   29u  IPv4 0x69b20e17dda7523d      0t0  TCP localhost:55226-&gt;localhost:5173 (ESTABLISHED)
+node      72325 eudesz   36u  IPv4 0x34c08d04b85ae53f      0t0  TCP localhost:5173 (LISTEN)
+node      72325 eudesz   40u  IPv4 0xeb73af27e7fc9c8b      0t0  TCP localhost:5173-&gt;localhost:55520 (ESTABLISHED)
+node      72325 eudesz   45u  IPv4 0x47d7146a150f16b1      0t0  TCP localhost:5173-&gt;localhost:55226 (ESTABLISHED)
+
+```
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: kill -9 72325</summary>
+
+```bash
+kill -9 72325
+```
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: npm run dev</summary>
+
+```bash
+npm run dev
+```
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: /Users/eudesz/.cursor/projects/Users-eudesz-Documents-Micro1-Shelf-Examples-360-video-fresh/terminals/549587.txt</summary>
+
+</details>
+</tool-use>
+
+---
+
+He reiniciado el servidor de desarrollo.
+
+Ya debería estar disponible nuevamente en:
+`http://localhost:5173/`
+
+Si sigue saliendo en blanco, por favor recarga la página en el navegador (F5 o Cmd+R).
+
+---
+
+_**User**_
+
+sigue blanco
+
+Download the React DevTools for a better development experience: https://react.dev/link/react-devtools
+App.tsx:57 Uncaught ReferenceError: useEffect is not defined
+    at App (App.tsx:57:3)
+    at Object.react_stack_bottom_frame (chunk-RSZBRKH3.js?v=22dd00c9:18241:20)
+    at renderWithHooks (chunk-RSZBRKH3.js?v=22dd00c9:5386:24)
+    at updateFunctionComponent (chunk-RSZBRKH3.js?v=22dd00c9:7207:21)
+    at beginWork (chunk-RSZBRKH3.js?v=22dd00c9:8257:20)
+    at runWithFiberInDEV (chunk-RSZBRKH3.js?v=22dd00c9:729:72)
+    at performUnitOfWork (chunk-RSZBRKH3.js?v=22dd00c9:12293:98)
+    at workLoopSync (chunk-RSZBRKH3.js?v=22dd00c9:12156:43)
+    at renderRootSync (chunk-RSZBRKH3.js?v=22dd00c9:12140:13)
+    at performWorkOnRoot (chunk-RSZBRKH3.js?v=22dd00c9:11559:37)
+App @ App.tsx:57
+react_stack_bottom_frame @ chunk-RSZBRKH3.js?v=22dd00c9:18241
+renderWithHooks @ chunk-RSZBRKH3.js?v=22dd00c9:5386
+updateFunctionComponent @ chunk-RSZBRKH3.js?v=22dd00c9:7207
+beginWork @ chunk-RSZBRKH3.js?v=22dd00c9:8257
+runWithFiberInDEV @ chunk-RSZBRKH3.js?v=22dd00c9:729
+performUnitOfWork @ chunk-RSZBRKH3.js?v=22dd00c9:12293
+workLoopSync @ chunk-RSZBRKH3.js?v=22dd00c9:12156
+renderRootSync @ chunk-RSZBRKH3.js?v=22dd00c9:12140
+performWorkOnRoot @ chunk-RSZBRKH3.js?v=22dd00c9:11559
+performWorkOnRootViaSchedulerTask @ chunk-RSZBRKH3.js?v=22dd00c9:13237
+performWorkUntilDeadline @ chunk-UFORGWNI.js?v=22dd00c9:30
+<App>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=22dd00c9:247
+(anonymous) @ main.tsx:8Understand this error
+main.tsx:8 An error occurred in the <App> component.
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://react.dev/link/error-boundaries to learn more about error boundaries.
+
+defaultOnUncaughtError @ chunk-RSZBRKH3.js?v=22dd00c9:6698
+logUncaughtError @ chunk-RSZBRKH3.js?v=22dd00c9:6752
+runWithFiberInDEV @ chunk-RSZBRKH3.js?v=22dd00c9:729
+lane.callback @ chunk-RSZBRKH3.js?v=22dd00c9:6780
+callCallback @ chunk-RSZBRKH3.js?v=22dd00c9:5223
+commitCallbacks @ chunk-RSZBRKH3.js?v=22dd00c9:5235
+runWithFiberInDEV @ chunk-RSZBRKH3.js?v=22dd00c9:731
+commitLayoutEffectOnFiber @ chunk-RSZBRKH3.js?v=22dd00c9:9708
+flushLayoutEffects @ chunk-RSZBRKH3.js?v=22dd00c9:12656
+commitRoot @ chunk-RSZBRKH3.js?v=22dd00c9:12535
+commitRootWhenReady @ chunk-RSZBRKH3.js?v=22dd00c9:11748
+performWorkOnRoot @ chunk-RSZBRKH3.js?v=22dd00c9:11682
+performWorkOnRootViaSchedulerTask @ chunk-RSZBRKH3.js?v=22dd00c9:13237
+performWorkUntilDeadline @ chunk-UFORGWNI.js?v=22dd00c9:30
+<App>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=22dd00c9:247
+(anonymous) @ main.tsx:8Understand this warning
+
+---
+
+_**Agent (model gemini-3-pro, mode Agent)**_
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: src/App.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: src/App.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+I have fixed the `Uncaught ReferenceError: useEffect is not defined` error by adding `useEffect` to the imports in `src/App.tsx`.
+
+The application should now load correctly without the white screen. Please refresh the page.
+
+---
+
+_**User**_
+
+@360_videos ahora crear un menu para estos videos como el de imagenes
+
+---
+
+_**Agent (model gemini-3-pro, mode Agent)**_
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: ls -F</summary>
+
+```bash
+ls -F
+```
+
+```
+360_images/
+360_videos/
+ARCHITECTURE.md
+README.md
+dist/
+eslint.config.js
+index.html
+node_modules/
+package-lock.json
+package.json
+public/
+render_grid_preview.py
+src/
+tsconfig.app.json
+tsconfig.json
+tsconfig.node.json
+videoframe_0 (2).png
+videoframe_3.png
+videoframe_4.png
+vite.config.ts
+
+```
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: ls 360_videos/</summary>
+
+```bash
+ls 360_videos/
+```
+
+```
+11bdd45e-5276-4f9c-9e50-e2cd5b4c59ae.mp4
+2512f5ec-c51f-4e1d-8c8a-be05193dc2f9.mp4
+3f59fb4a-df51-4104-8ce0-a87305b0334b.mp4
+4f3e8ff0-436e-4252-aacf-ecdc5050d1c4.mp4
+7d64f729-3efb-4cdd-a374-684ddde7d51a.mp4
+98f05e48-0c4b-4a97-858e-55ba75be6336.mp4
+dd156928-99d4-409b-8fe6-5b5e01468487.mp4
+e8347f4c-10c4-4699-86ee-b0d841299174.mp4
+
+```
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="shell" data-tool-name="run_terminal_command_v2">
+<details><summary>Tool use: **run_terminal_command_v2** • Run command: mkdir -p public/360_videos && cp 360_videos/* public/360_videos/</summary>
+
+```bash
+mkdir -p public/360_videos && cp 360_videos/* public/360_videos/
+```
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="read" data-tool-name="read_file_v2">
+<details><summary>Tool use: **read_file_v2** • Read file: src/App.tsx</summary>
+
+</details>
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: src/App.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+<tool-use data-tool-type="write" data-tool-name="edit_file_v2">
+
+<details><summary>Tool use: **edit_file_v2** • Edit file: src/App.tsx</summary>
+
+</details>
+
+</tool-use>
+
+---
+
+He creado el menú para abrir los videos 360.
+
+Lo que he hecho:
+1.  **Movido los videos**: Copié los videos de la carpeta `360_videos/` a `public/360_videos/` para que sean accesibles.
+2.  **Actualizado App.tsx**:
+    *   Agregué la lista `SAMPLE_VIDEOS` con los videos encontrados.
+    *   Añadí un nuevo menú desplegable "Select Video" debajo del de imágenes.
+    *   Ajusté la lógica para que al seleccionar un video o una imagen, el valor del otro dropdown se limpie visualmente (mostrando la opción por defecto) para evitar confusiones.
+
+Ahora puedes seleccionar cualquiera de los videos de la lista para reproducirlos en el visor.
+
+---
+
+_**User**_
+
+el control de vidoe no me funciona; y quiero que quites del menu y pone abajo independientemente
+
+que se vea siempre por mas que se minimize
+
+---
+

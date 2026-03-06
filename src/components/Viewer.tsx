@@ -57,6 +57,9 @@ export interface ViewerRef {
   getCameraState: () => { position: THREE.Vector3; target: THREE.Vector3; fov: number }
   setCameraState: (state: { position: THREE.Vector3; target: THREE.Vector3; fov: number }) => void
   adjustSphericalZoom: (deltaFov: number) => void
+  togglePlay: () => void
+  setVideoTime: (time: number) => void
+  getVideoState: () => { isPlaying: boolean; currentTime: number; duration: number }
 }
 
 const GRID_RADIUS = 490
@@ -459,6 +462,30 @@ const CameraController = forwardRef<ViewerRef, { viewMode: ViewMode }>((props, r
       camera.updateProjectionMatrix()
       if (controlsRef.current) controlsRef.current.update()
     },
+    togglePlay: () => {
+      if (videoRef.current) {
+        if (videoRef.current.paused) {
+          videoRef.current.play().catch((e) => console.error("Play failed:", e))
+        } else {
+          videoRef.current.pause()
+        }
+      }
+    },
+    setVideoTime: (time) => {
+      if (videoRef.current) {
+        videoRef.current.currentTime = time
+      }
+    },
+    getVideoState: () => {
+      if (videoRef.current) {
+        return {
+          isPlaying: !videoRef.current.paused,
+          currentTime: videoRef.current.currentTime,
+          duration: videoRef.current.duration || 0
+        }
+      }
+      return { isPlaying: false, currentTime: 0, duration: 0 }
+    }
   }))
 
   return (
@@ -529,6 +556,7 @@ const Viewer = forwardRef<ViewerRef, ViewerProps>(({
 }, ref) => {
   const [texture, setTexture] = useState<THREE.Texture | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
+  const videoRef = useRef<HTMLVideoElement | null>(null)
 
   useEffect(() => {
     if (!mediaUrl) {
@@ -543,6 +571,7 @@ const Viewer = forwardRef<ViewerRef, ViewerProps>(({
     if (mediaType === 'video') {
       const video = document.createElement('video')
       videoEl = video
+      videoRef.current = video
       video.src = mediaUrl
       video.crossOrigin = 'anonymous'
       video.loop = true
@@ -570,6 +599,7 @@ const Viewer = forwardRef<ViewerRef, ViewerProps>(({
       video.addEventListener('loadeddata', onVideoReady, { once: true })
       video.addEventListener('error', onVideoError, { once: true })
     } else {
+      videoRef.current = null
       const loader = new THREE.TextureLoader()
       loader.setCrossOrigin('anonymous')
 
@@ -606,6 +636,7 @@ const Viewer = forwardRef<ViewerRef, ViewerProps>(({
         videoEl.pause()
         videoEl.src = ''
       }
+      videoRef.current = null
     }
   }, [mediaUrl, mediaType])
 

@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import Viewer from './components/Viewer'
 import type { ViewerRef, ViewMode } from './components/Viewer'
 import * as THREE from 'three'
@@ -43,13 +43,58 @@ function App() {
     { name: 'Image 6', url: '/360_images/dd156928-99d4-409b-8fe6-5b5e01468487.png' },
     { name: 'Image 7', url: '/360_images/e8347f4c-10c4-4699-86ee-b0d841299174.png' },
   ]
+
+  const SAMPLE_VIDEOS = [
+    { name: 'Video 1', url: '/360_videos/11bdd45e-5276-4f9c-9e50-e2cd5b4c59ae.mp4' },
+    { name: 'Video 2', url: '/360_videos/2512f5ec-c51f-4e1d-8c8a-be05193dc2f9.mp4' },
+    { name: 'Video 3', url: '/360_videos/3f59fb4a-df51-4104-8ce0-a87305b0334b.mp4' },
+    { name: 'Video 4', url: '/360_videos/4f3e8ff0-436e-4252-aacf-ecdc5050d1c4.mp4' },
+    { name: 'Video 5', url: '/360_videos/7d64f729-3efb-4cdd-a374-684ddde7d51a.mp4' },
+    { name: 'Video 6', url: '/360_videos/98f05e48-0c4b-4a97-858e-55ba75be6336.mp4' },
+    { name: 'Video 7', url: '/360_videos/dd156928-99d4-409b-8fe6-5b5e01468487.mp4' },
+    { name: 'Video 8', url: '/360_videos/e8347f4c-10c4-4699-86ee-b0d841299174.mp4' },
+  ]
   const [viewMode, setViewMode] = useState<ViewMode>('spherical')
   const [issues, setIssues] = useState<Issue[]>([])
   const [isLogging, setIsLogging] = useState(false)
   const [isMenuMinimized, setIsMenuMinimized] = useState(false)
   const [newIssueDesc, setNewIssueDesc] = useState('')
+  const [isPlaying, setIsPlaying] = useState(true)
+  const [videoProgress, setVideoProgress] = useState(0)
+  const [videoDuration, setVideoDuration] = useState(0)
   
   const viewerRef = useRef<ViewerRef>(null)
+
+  useEffect(() => {
+    let interval: any
+    if (mediaType === 'video') {
+      interval = setInterval(() => {
+        if (viewerRef.current) {
+          const state = viewerRef.current.getVideoState()
+          setIsPlaying(state.isPlaying)
+          setVideoProgress(state.currentTime)
+          setVideoDuration(state.duration)
+        }
+      }, 100)
+    }
+    return () => clearInterval(interval)
+  }, [mediaType])
+
+  const handleTogglePlay = () => {
+    viewerRef.current?.togglePlay()
+  }
+
+  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const time = parseFloat(e.target.value)
+    viewerRef.current?.setVideoTime(time)
+    setVideoProgress(time)
+  }
+
+  const formatTime = (time: number) => {
+    const minutes = Math.floor(time / 60)
+    const seconds = Math.floor(time % 60)
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`
+  }
 
   const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault()
@@ -267,12 +312,42 @@ function App() {
                   outline: 'none',
                   width: '100%'
                 }}
-                value={mediaUrl || ''}
+                value={mediaType === 'image' ? (mediaUrl || '') : ''}
               >
                 <option value="" disabled>Select an image...</option>
                 {SAMPLE_IMAGES.map((img) => (
                   <option key={img.url} value={img.url}>
                     {img.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <label style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Select Video</label>
+              <select 
+                onChange={(e) => {
+                  if (e.target.value) {
+                    setMediaType('video')
+                    setMediaUrl(e.target.value)
+                  }
+                }}
+                style={{ 
+                  background: 'rgba(0,0,0,0.3)', 
+                  color: '#f1f5f9', 
+                  borderRadius: 8, 
+                  border: '1px solid rgba(255,255,255,0.1)', 
+                  padding: '10px 12px', 
+                  fontSize: 13,
+                  outline: 'none',
+                  width: '100%'
+                }}
+                value={mediaType === 'video' ? (mediaUrl || '') : ''}
+              >
+                <option value="" disabled>Select a video...</option>
+                {SAMPLE_VIDEOS.map((vid) => (
+                  <option key={vid.url} value={vid.url}>
+                    {vid.name}
                   </option>
                 ))}
               </select>
@@ -451,6 +526,10 @@ function App() {
               </div>
             )}
 
+            {mediaType === 'video' && (
+              <div style={{ display: 'none' }}></div>
+            )}
+
             <button 
               onClick={handleLogIssue}
               style={{ background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)', color: '#fff', border: 'none', padding: '12px', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: mediaUrl ? 1 : 0.6, boxShadow: '0 2px 8px rgba(220, 38, 38, 0.25)' }}
@@ -470,6 +549,68 @@ function App() {
             </div>
           )}
         </div>
+
+        {/* Video Controls - Fixed Bottom Bar */}
+        {mediaType === 'video' && (
+          <div style={{ 
+            position: 'absolute', 
+            bottom: 30, 
+            left: '50%', 
+            transform: 'translateX(-50%)', 
+            width: '90%', 
+            maxWidth: 600, 
+            background: 'rgba(15, 23, 42, 0.85)', 
+            backdropFilter: 'blur(12px)', 
+            padding: '16px 24px', 
+            borderRadius: 16, 
+            border: '1px solid rgba(255, 255, 255, 0.1)', 
+            boxShadow: '0 4px 24px -1px rgba(0, 0, 0, 0.3)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 12,
+            zIndex: 20
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+              <button
+                onClick={handleTogglePlay}
+                style={{ 
+                  background: isPlaying ? 'rgba(255,255,255,0.2)' : '#3b82f6', 
+                  border: 'none', 
+                  borderRadius: '50%', 
+                  width: 40, 
+                  height: 40, 
+                  cursor: 'pointer', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center', 
+                  color: '#fff',
+                  transition: 'all 0.2s'
+                }}
+              >
+                {isPlaying ? (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                ) : (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                )}
+              </button>
+              <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#94a3b8', fontWeight: 500 }}>
+                  <span>{formatTime(videoProgress)}</span>
+                  <span>{formatTime(videoDuration)}</span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max={videoDuration || 100}
+                  step="0.1"
+                  value={videoProgress}
+                  onChange={handleSeek}
+                  style={{ width: '100%', accentColor: '#3b82f6', height: 4, cursor: 'pointer' }}
+                />
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Issue Logging Modal */}
         {isLogging && (
