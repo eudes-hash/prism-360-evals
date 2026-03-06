@@ -119,9 +119,8 @@ const EquirectangularGrid = ({
     const fovRad = (fov * Math.PI) / 180
     const halfCount = Math.max(Math.floor(lineDensity / 2), 2)
     const betaMax = fovRad / 2
-    const gammaMax = Math.PI / 2 - 0.045
-
-    // Build curved top/bottom boundaries from the outermost grid curves.
+    
+    // Draw TOP and BOTTOM sectors following curved limits instead of straight lines.
     const topBoundary = new Float32Array(W)
     const bottomBoundary = new Float32Array(W)
     topBoundary.fill(Number.POSITIVE_INFINITY)
@@ -129,7 +128,6 @@ const EquirectangularGrid = ({
 
     faceDefs.forEach((face) => {
       const center = wrapPi(face.center + rotationOffset)
-
       // Top boundary: outer positive-elevation curve.
       for (let s = -220; s <= 220; s++) {
         const beta = (s / 220) * betaMax
@@ -144,7 +142,6 @@ const EquirectangularGrid = ({
         const yTop = latitudeToY(phiTop)
         if (xTop >= 0 && xTop < W && yTop < topBoundary[xTop]) topBoundary[xTop] = yTop
       }
-
       // Bottom boundary: outer negative-elevation curve.
       for (let s = -220; s <= 220; s++) {
         const beta = (s / 220) * betaMax
@@ -161,7 +158,7 @@ const EquirectangularGrid = ({
       }
     })
 
-    // Fill sparse samples by propagating nearest known values.
+    // Fill sparse samples
     for (let x = 1; x < W; x++) {
       if (!Number.isFinite(topBoundary[x])) topBoundary[x] = topBoundary[x - 1]
       if (!Number.isFinite(bottomBoundary[x])) bottomBoundary[x] = bottomBoundary[x - 1]
@@ -175,7 +172,6 @@ const EquirectangularGrid = ({
       if (!Number.isFinite(bottomBoundary[x])) bottomBoundary[x] = H * 0.8
     }
 
-    // Draw TOP and BOTTOM sectors following curved limits instead of straight lines.
     ctx.fillStyle = hexToRgba(polarColors.top, Math.min(sectorOpacity + 0.04, 0.75))
     ctx.beginPath()
     ctx.moveTo(0, 0)
@@ -192,178 +188,147 @@ const EquirectangularGrid = ({
     ctx.closePath()
     ctx.fill()
 
-    // Face-local projected curves (horizontal and vertical) clipped to each 90° face.
+    // Helper to check if a longitude is in Front/Back sectors
+    const isFrontBack = (lambda: number) => {
+      // Front: -PI/4 to PI/4
+      // Back: 3PI/4 to PI or -PI to -3PI/4. (Abs > 3PI/4)
+      const abs = Math.abs(lambda)
+      return abs < Math.PI / 4 || abs > (3 * Math.PI) / 4
+    }
+
+    // Helper to check if a longitude is in Left/Right sectors
+    const isLeftRight = (lambda: number) => {
+      // Right: PI/4 to 3PI/4
+      // Left: -3PI/4 to -PI/4
+      const abs = Math.abs(lambda)
+      return abs >= Math.PI / 4 && abs <= (3 * Math.PI) / 4
+    }
+
+    // Draw Meridians (Verticals for Side Sectors)
+    // Clipped to the equatorial band (between bottom and top boundaries)
     ctx.strokeStyle = color
+    ctx.lineWidth = 1.15
+    ctx.globalAlpha = 0.6
+    
+    // Draw a meridian every X degrees
+    const meridianStep = 360 / (lineDensity * 4) // Adjust density
+    for (let lon = -180; lon < 180; lon += 10) { // Fixed step for now to match density
+       // Actually let's use the same density logic as before
+    }
+    
+    // We can just iterate screen X and draw vertical lines
+    // But we need to match the density of the other lines.
+    // The other lines use `halfCount`.
+    // Let's draw meridians at specific u values?
+    // u = tan(beta). lambda = atan(u).
+    // This matches the spacing of the other grid lines at the equator.
+    
+    for (let i = -halfCount; i <= halfCount; i++) {
+        const beta = (i / halfCount) * betaMax
+        const u = Math.tan(beta)
+        // For each face, we have meridians at tan(lambda_local) = u
+        // Front: lambda = atan(u)
+        // Right: lambda = atan(u) + PI/2
+        // etc.
+        const faces = [0, Math.PI/2, Math.PI, -Math.PI/2]
+        faces.forEach(faceOffset => {
+            const lambda = Math.atan(u) + faceOffset
+            const x = longitudeToX(lambda + rotationOffset)
+            
+            // Find y limits from boundaries
+            const ix = Math.floor(x)
+            const yMin = topBoundary[ix]
+            const yMax = bottomBoundary[ix]
+            
+            if (Number.isFinite(yMin) && Number.isFinite(yMax)) {
+                ctx.beginPath()
+                ctx.moveTo(x, yMin)
+                ctx.lineTo(x, yMax)
+                ctx.stroke()
+            }
+        })
+    }
+
+    // Draw Great Circles Grid (Global Continuity)
     ctx.lineWidth = 1.15
     ctx.lineCap = 'round'
     ctx.globalAlpha = 0.88
 
-    faceDefs.forEach((face) => {
-      const center = wrapPi(face.center + rotationOffset)
+    // Helper to draw a Great Circle defined by normal vector N
+    // with selective rendering based on sector
+    const drawSelectiveGreatCircle = (Nx: number, Ny: number, Nz: number, validSectors: 'frontback' | 'leftright') => {
+      const isVertical = Math.abs(Ny) < 0.001
+      if (isVertical) return
 
-      // Horizontal family (constant gamma, sweeping beta).
-      for (let i = -halfCount; i <= halfCount; i++) {
-        const gamma = (i / halfCount) * betaMax
-        ctx.beginPath()
-        let open = false
-        let prevX = 0
-        for (let s = -130; s <= 130; s++) {
-          const beta = (s / 130) * betaMax
-          const u = Math.tan(beta)
-          const v = Math.tan(gamma)
-          const dir = new THREE.Vector3(u, v, 1).normalize()
-          dir.applyAxisAngle(yAxis, center)
-
-          const lambda = Math.atan2(dir.x, dir.z)
-          if (Math.abs(angularDiff(lambda, center)) > Math.PI / 4 + 0.01) {
-            open = false
-            continue
-          }
-
-          const phi = Math.asin(Math.max(-1, Math.min(1, dir.y)))
-          const x = longitudeToX(lambda)
-          const y = latitudeToY(phi)
-          if (!open) {
-            ctx.moveTo(x, y)
-            open = true
-          } else if (Math.abs(x - prevX) > W / 2) {
-            ctx.moveTo(x, y)
-          } else {
-            ctx.lineTo(x, y)
-          }
-          prevX = x
-        }
-        ctx.stroke()
-      }
-
-      // Vertical family (constant beta, sweeping gamma toward poles).
-      for (let i = -halfCount; i <= halfCount; i++) {
-        const beta = (i / halfCount) * betaMax
-        const u = Math.tan(beta)
-        ctx.beginPath()
-        let open = false
-        let prevX = 0
-        for (let s = -150; s <= 150; s++) {
-          const gamma = (s / 150) * gammaMax
-          const v = Math.tan(gamma)
-          const dir = new THREE.Vector3(u, v, 1).normalize()
-          dir.applyAxisAngle(yAxis, center)
-
-          const lambda = Math.atan2(dir.x, dir.z)
-          if (Math.abs(angularDiff(lambda, center)) > Math.PI / 4 + 0.01) {
-            open = false
-            continue
-          }
-
-          const phi = Math.asin(Math.max(-1, Math.min(1, dir.y)))
-          const x = longitudeToX(lambda)
-          const y = latitudeToY(phi)
-          if (!open) {
-            ctx.moveTo(x, y)
-            open = true
-          } else if (Math.abs(x - prevX) > W / 2) {
-            ctx.moveTo(x, y)
-          } else {
-            ctx.lineTo(x, y)
-          }
-          prevX = x
-        }
-        ctx.stroke()
-      }
-    })
-    ctx.globalAlpha = 1
-
-    // TOP curves (full family), clipped strictly to TOP sector.
-    const topCurveCount = 3
-    const snapLongitudesDeg = [-180, -135, -90, -45, 0, 45, 90, 135, 180]
-    ctx.save()
-    ctx.beginPath()
-    ctx.moveTo(0, 0)
-    for (let x = 0; x < W; x++) ctx.lineTo(x, topBoundary[x])
-    ctx.lineTo(W, 0)
-    ctx.closePath()
-    ctx.clip()
-
-    ctx.strokeStyle = color
-    for (let i = 1; i <= topCurveCount; i++) {
-      const t = i / (topCurveCount + 1)
-      const topAlpha = betaMax + t * (gammaMax - betaMax)
-      const sampleByX = new Map<number, number>()
-      for (let x = 0; x <= W; x += 2) {
-        const lambda = (x / W) * 2 * Math.PI - Math.PI
-        sampleByX.set(x, lambda)
-      }
-      snapLongitudesDeg.forEach((lonDeg) => {
-        const lambda = (lonDeg * Math.PI) / 180 + rotationOffset
-        const x = Math.round(longitudeToX(lambda))
-        sampleByX.set(Math.min(Math.max(x, 0), W), lambda)
-      })
-      const sortedXs = Array.from(sampleByX.keys()).sort((a, b) => a - b)
-
-      ctx.lineWidth = i === 1 ? 1.55 : 1.15
-      ctx.globalAlpha = i === 1 ? 0.9 : 0.72
       ctx.beginPath()
-      let firstTopPoint = true
-      for (const x of sortedXs) {
-        const lambda = sampleByX.get(x)!
-        const phi = Math.atan(Math.tan(topAlpha) * Math.cos(lambda - rotationOffset))
-        const y = latitudeToY(phi)
-        if (firstTopPoint) {
-          ctx.moveTo(x, y)
-          firstTopPoint = false
-        } else {
-          ctx.lineTo(x, y)
+      let first = true
+      let prevX = -1
+      
+      // Iterate longitude (screen X)
+      for (let x = 0; x <= W; x += 4) { // Step 4 for performance
+        const lambda = (x / W) * 2 * Math.PI - Math.PI + rotationOffset
+        const normalizedLambda = wrapPi(lambda - rotationOffset)
+        
+        // Check if we are in a valid sector for this circle
+        // We always draw in Top/Bottom (phi check?)
+        // The boundaries define Top/Bottom.
+        // If y < topBoundary or y > bottomBoundary, we are in Top/Bottom.
+        // If y is between, we are in Side.
+        
+        const val = - (Nx * Math.sin(lambda - rotationOffset) + Nz * Math.cos(lambda - rotationOffset)) / Ny
+        const y = latitudeToY(Math.atan(val))
+        
+        const ix = Math.floor(x)
+        const yTop = topBoundary[ix] || 0
+        const yBot = bottomBoundary[ix] || H
+        
+        const isSide = y >= yTop && y <= yBot
+        
+        let shouldDraw = true
+        if (isSide) {
+            if (validSectors === 'frontback' && !isFrontBack(normalizedLambda)) shouldDraw = false
+            if (validSectors === 'leftright' && !isLeftRight(normalizedLambda)) shouldDraw = false
         }
+        
+        if (shouldDraw) {
+            if (first) {
+              ctx.moveTo(x, y)
+              first = false
+            } else {
+              if (Math.abs(x - prevX) > W / 2) {
+                ctx.moveTo(x, y)
+              } else {
+                ctx.lineTo(x, y)
+              }
+            }
+        } else {
+            first = true // Break the line
+        }
+        prevX = x
       }
       ctx.stroke()
     }
-    ctx.restore()
 
-    // BOTTOM curves (mirror family), clipped strictly to BOTTOM sector.
-    const bottomCurveCount = 3
-    ctx.save()
-    ctx.beginPath()
-    ctx.moveTo(0, H)
-    for (let x = 0; x < W; x++) ctx.lineTo(x, bottomBoundary[x])
-    ctx.lineTo(W, H)
-    ctx.closePath()
-    ctx.clip()
-
-    ctx.strokeStyle = color
-    for (let i = 1; i <= bottomCurveCount; i++) {
-      const t = i / (bottomCurveCount + 1)
-      const bottomAlpha = -(betaMax + t * (gammaMax - betaMax))
-      const sampleByX = new Map<number, number>()
-      for (let x = 0; x <= W; x += 2) {
-        const lambda = (x / W) * 2 * Math.PI - Math.PI
-        sampleByX.set(x, lambda)
-      }
-      snapLongitudesDeg.forEach((lonDeg) => {
-        const lambda = (lonDeg * Math.PI) / 180 + rotationOffset
-        const x = Math.round(longitudeToX(lambda))
-        sampleByX.set(Math.min(Math.max(x, 0), W), lambda)
-      })
-      const sortedXs = Array.from(sampleByX.keys()).sort((a, b) => a - b)
-
-      ctx.lineWidth = i === 1 ? 1.55 : 1.15
-      ctx.globalAlpha = i === 1 ? 0.9 : 0.72
-      ctx.beginPath()
-      let firstBottomPoint = true
-      for (const x of sortedXs) {
-        const lambda = sampleByX.get(x)!
-        const phi = Math.atan(Math.tan(bottomAlpha) * Math.cos(lambda - rotationOffset))
-        const y = latitudeToY(phi)
-        if (firstBottomPoint) {
-          ctx.moveTo(x, y)
-          firstBottomPoint = false
-        } else {
-          ctx.lineTo(x, y)
-        }
-      }
-      ctx.stroke()
+    // Iterate to draw both families
+    for (let i = -halfCount; i <= halfCount; i++) {
+      if (i === 0) continue 
+      
+      const beta = (i / halfCount) * betaMax
+      const u = Math.tan(beta)
+      
+      // Family A: Normal (0, u, -1). 
+      // Connects Left-Right. 
+      // Acts as Horizontals for Front/Back.
+      // Acts as Diagonals for Left/Right (so we skip Side-LeftRight).
+      drawSelectiveGreatCircle(0, u, -1, 'frontback')
+      
+      // Family B: Normal (1, -u, 0).
+      // Connects Front-Back.
+      // Acts as Horizontals for Left/Right.
+      // Acts as Diagonals for Front/Back (so we skip Side-FrontBack).
+      drawSelectiveGreatCircle(1, -u, 0, 'leftright')
     }
-    ctx.restore()
-
+    
     // Master longitude/latitude references.
     const longitudeRefs = [-180, -135, -90, -45, 0, 45, 90, 135, 180]
     const latitudeRefs = [-90, -45, 0, 45, 90]
