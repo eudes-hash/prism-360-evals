@@ -368,7 +368,7 @@ const Loader = () => (
   </Html>
 )
 
-const CameraController = forwardRef<ViewerRef, { viewMode: ViewMode }>((props, ref) => {
+const CameraController = forwardRef<ViewerRef, { viewMode: ViewMode, videoRef: React.MutableRefObject<HTMLVideoElement | null> }>((props, ref) => {
   const { camera } = useThree()
   const controlsRef = useRef<OrbitControlsImpl>(null)
 
@@ -463,25 +463,25 @@ const CameraController = forwardRef<ViewerRef, { viewMode: ViewMode }>((props, r
       if (controlsRef.current) controlsRef.current.update()
     },
     togglePlay: () => {
-      if (videoRef.current) {
-        if (videoRef.current.paused) {
-          videoRef.current.play().catch((e) => console.error("Play failed:", e))
+      if (props.videoRef.current) {
+        if (props.videoRef.current.paused) {
+          props.videoRef.current.play().catch((e) => console.error("Play failed:", e))
         } else {
-          videoRef.current.pause()
+          props.videoRef.current.pause()
         }
       }
     },
     setVideoTime: (time) => {
-      if (videoRef.current) {
-        videoRef.current.currentTime = time
+      if (props.videoRef.current) {
+        props.videoRef.current.currentTime = time
       }
     },
     getVideoState: () => {
-      if (videoRef.current) {
+      if (props.videoRef.current) {
         return {
-          isPlaying: !videoRef.current.paused,
-          currentTime: videoRef.current.currentTime,
-          duration: videoRef.current.duration || 0
+          isPlaying: !props.videoRef.current.paused,
+          currentTime: props.videoRef.current.currentTime,
+          duration: props.videoRef.current.duration || 0
         }
       }
       return { isPlaying: false, currentTime: 0, duration: 0 }
@@ -649,7 +649,7 @@ const Viewer = forwardRef<ViewerRef, ViewerProps>(({
           <PerspectiveCamera makeDefault fov={75} position={[0, 0, 0.1]} />
         )}
         <color attach="background" args={['#111']} />
-        <CameraController ref={ref} viewMode={viewMode} />
+        <CameraController ref={ref} viewMode={viewMode} videoRef={videoRef} />
         <Suspense fallback={<Loader />}>
           <ErrorBoundary fallback={<ErrorFallback />}>
             {texture && <ImageSphere key={`${mediaType}:${mediaUrl ?? 'empty'}`} texture={texture} viewMode={viewMode} />}
