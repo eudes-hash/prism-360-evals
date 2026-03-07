@@ -14,7 +14,7 @@ interface Issue {
 }
 
 function App() {
-  const [mediaUrl, setMediaUrl] = useState<string | null>('/default-panorama.png')
+  const [mediaUrl, setMediaUrl] = useState<string | null>('/360_images/e8347f4c-10c4-4699-86ee-b0d841299174.png')
   const [mediaType, setMediaType] = useState<'image' | 'video'>('image')
   const [showGrid, setShowGrid] = useState(true)
   const [showSinusoidalGrid, setShowSinusoidalGrid] = useState(true)
@@ -33,26 +33,16 @@ function App() {
   })
 
   const SAMPLE_IMAGES = [
-    { name: 'Default Panorama', url: '/default-panorama.png' },
-    { name: 'Image 1', url: '/360_images/11bdd45e-5276-4f9c-9e50-e2cd5b4c59ae.png' },
-    { name: 'Image 2', url: '/360_images/2512f5ec-c51f-4e1d-8c8a-be05193dc2f9.png' },
-    { name: 'Image 3', url: '/360_images/3f59fb4a-df51-4104-8ce0-a87305b0334b.png' },
-    { name: 'Image 4', url: '/360_images/7d64f729-3efb-4cdd-a374-684ddde7d51a.png' },
-    { name: 'Image 5', url: '/360_images/98f05e48-0c4b-4a97-858e-55ba75be6336.png' },
-    { name: 'Image 6', url: '/360_images/dd156928-99d4-409b-8fe6-5b5e01468487.png' },
-    { name: 'Image 7', url: '/360_images/e8347f4c-10c4-4699-86ee-b0d841299174.png' },
+    { name: 'e8347f4c...', url: '/360_images/e8347f4c-10c4-4699-86ee-b0d841299174.png' },
+    { name: '11bdd45e...', url: '/360_images/11bdd45e-5276-4f9c-9e50-e2cd5b4c59ae.png' },
+    { name: '98f05e48...', url: '/360_images/98f05e48-0c4b-4a97-858e-55ba75be6336.png' },
+    { name: '3f59fb4a...', url: '/360_images/3f59fb4a-df51-4104-8ce0-a87305b0334b.png' },
+    { name: '7d64f729...', url: '/360_images/7d64f729-3efb-4cdd-a374-684ddde7d51a.png' },
+    { name: '2512f5ec...', url: '/360_images/2512f5ec-c51f-4e1d-8c8a-be05193dc2f9.png' },
+    { name: 'dd156928...', url: '/360_images/dd156928-99d4-409b-8fe6-5b5e01468487.png' },
   ]
 
-  const SAMPLE_VIDEOS = [
-    { name: 'Video 1', url: '/360_videos/11bdd45e-5276-4f9c-9e50-e2cd5b4c59ae.mp4' },
-    { name: 'Video 2', url: '/360_videos/2512f5ec-c51f-4e1d-8c8a-be05193dc2f9.mp4' },
-    { name: 'Video 3', url: '/360_videos/3f59fb4a-df51-4104-8ce0-a87305b0334b.mp4' },
-    { name: 'Video 4', url: '/360_videos/4f3e8ff0-436e-4252-aacf-ecdc5050d1c4.mp4' },
-    { name: 'Video 5', url: '/360_videos/7d64f729-3efb-4cdd-a374-684ddde7d51a.mp4' },
-    { name: 'Video 6', url: '/360_videos/98f05e48-0c4b-4a97-858e-55ba75be6336.mp4' },
-    { name: 'Video 7', url: '/360_videos/dd156928-99d4-409b-8fe6-5b5e01468487.mp4' },
-    { name: 'Video 8', url: '/360_videos/e8347f4c-10c4-4699-86ee-b0d841299174.mp4' },
-  ]
+  const SAMPLE_VIDEOS: { name: string; url: string }[] = []
   const [viewMode, setViewMode] = useState<ViewMode>('spherical')
   const [issues, setIssues] = useState<Issue[]>([])
   const [isLogging, setIsLogging] = useState(false)
