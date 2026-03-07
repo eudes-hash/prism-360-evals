@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "360º Render - Prism",
+  "version": "3.0",
+  "description": "Adds a button to open detected videos in a 360° rendered player. Created by the prism-ops team.",
+  "permissions": ["scripting", "activeTab"],
+  "host_permissions": ["<all_urls>"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://*/*.mp4*"],
+      "js": ["content.js"],
+      "run_at": "document_end"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["viewer.html", "viewer.js", "phrases.js", "three.module.js"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
