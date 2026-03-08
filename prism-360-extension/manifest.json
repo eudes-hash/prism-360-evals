@@ -3,16 +3,19 @@
   "name": "Prism 360 Viewer",
   "version": "1.0",
   "description": "Advanced 360° video player with equirectangular grid tools.",
-  "permissions": ["activeTab", "scripting"],
+  "permissions": ["activeTab", "scripting", "tabs", "webNavigation"],
   "host_permissions": ["<all_urls>"],
+  "background": {
+    "service_worker": "background.js"
+  },
   "action": {
     "default_popup": "index.html"
   },
   "content_scripts": [
     {
-      "matches": ["*://*/*.mp4*"],
+      "matches": ["<all_urls>"],
       "js": ["content.js"],
-      "run_at": "document_start"
+      "run_at": "document_end"
     }
   ],
   "web_accessible_resources": [

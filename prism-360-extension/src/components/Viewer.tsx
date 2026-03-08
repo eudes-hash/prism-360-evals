@@ -540,6 +540,17 @@ const EquirectangularCamera = () => {
   )
 }
 
+const isRemoteHttpUrl = (value: string) => /^https?:\/\//i.test(value)
+
+const loadAsBlobUrl = async (value: string, signal: AbortSignal): Promise<string> => {
+  const response = await fetch(value, { signal })
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}`)
+  }
+  const blob = await response.blob()
+  return URL.createObjectURL(blob)
+}
+
 const Viewer = forwardRef<ViewerRef, ViewerProps>(({
   mediaUrl,
   mediaType,
@@ -565,18 +576,36 @@ const Viewer = forwardRef<ViewerRef, ViewerProps>(({
 
     let isCancelled = false
     let videoEl: HTMLVideoElement | null = null
+    let objectUrlToRevoke: string | null = null
+    const abortController = new AbortController()
 
     if (mediaType === 'video') {
       const video = document.createElement('video')
       videoEl = video
       videoRef.current = video
-      video.src = mediaUrl
+      const assignVideoSource = async () => {
+        let finalUrl = mediaUrl
+        if (isRemoteHttpUrl(mediaUrl)) {
+          try {
+            const blobUrl = await loadAsBlobUrl(mediaUrl, abortController.signal)
+            objectUrlToRevoke = blobUrl
+            finalUrl = blobUrl
+          } catch {
+            // Fallback to direct URL if blob loading is blocked/unavailable.
+          }
+        }
+
+        if (isCancelled) return
+        video.src = finalUrl
+        video.play().catch(() => {})
+      }
+
       video.crossOrigin = 'anonymous'
       video.loop = true
       video.muted = true
       video.playsInline = true
       video.preload = 'auto'
-      video.play().catch(() => {})
+      void assignVideoSource()
 
       const onVideoReady = () => {
         if (isCancelled) return
@@ -601,31 +630,48 @@ const Viewer = forwardRef<ViewerRef, ViewerProps>(({
       const loader = new THREE.TextureLoader()
       loader.setCrossOrigin('anonymous')
 
-      loader.load(
-        mediaUrl,
-        (loadedTexture) => {
-          if (isCancelled) {
-            loadedTexture.dispose()
-            return
-          }
-          loadedTexture.mapping = THREE.EquirectangularReflectionMapping
-          loadedTexture.colorSpace = THREE.SRGBColorSpace
-          loadedTexture.needsUpdate = true
-          setTexture(loadedTexture)
-          setLoadError(null)
-        },
-        undefined,
-        () => {
-          if (!isCancelled) {
-            setTexture(null)
-            setLoadError('No se pudo cargar la imagen. Prueba otro JPG/PNG.')
+      const loadImage = async () => {
+        let finalUrl = mediaUrl
+        if (isRemoteHttpUrl(mediaUrl)) {
+          try {
+            const blobUrl = await loadAsBlobUrl(mediaUrl, abortController.signal)
+            objectUrlToRevoke = blobUrl
+            finalUrl = blobUrl
+          } catch {
+            // Fallback to direct URL if blob loading is blocked/unavailable.
           }
         }
-      )
+
+        if (isCancelled) return
+        loader.load(
+          finalUrl,
+          (loadedTexture) => {
+            if (isCancelled) {
+              loadedTexture.dispose()
+              return
+            }
+            loadedTexture.mapping = THREE.EquirectangularReflectionMapping
+            loadedTexture.colorSpace = THREE.SRGBColorSpace
+            loadedTexture.needsUpdate = true
+            setTexture(loadedTexture)
+            setLoadError(null)
+          },
+          undefined,
+          () => {
+            if (!isCancelled) {
+              setTexture(null)
+              setLoadError('No se pudo cargar la imagen. Prueba otro JPG/PNG.')
+            }
+          }
+        )
+      }
+
+      void loadImage()
     }
 
     return () => {
       isCancelled = true
+      abortController.abort()
       setTexture((prev) => {
         if (prev) prev.dispose()
         return null
@@ -633,6 +679,9 @@ const Viewer = forwardRef<ViewerRef, ViewerProps>(({
       if (videoEl) {
         videoEl.pause()
         videoEl.src = ''
+      }
+      if (objectUrlToRevoke) {
+        URL.revokeObjectURL(objectUrlToRevoke)
       }
       videoRef.current = null
     }

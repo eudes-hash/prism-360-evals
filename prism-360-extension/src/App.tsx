@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import Viewer from './components/Viewer'
 import type { ViewerRef, ViewMode } from './components/Viewer'
 import * as THREE from 'three'
@@ -32,18 +32,7 @@ function App() {
     bottom: '#0ea5e9',
   })
 
-  const SAMPLE_IMAGES = [
-    { name: 'e8347f4c...', url: '/360_images/e8347f4c-10c4-4699-86ee-b0d841299174.png' },
-    { name: '11bdd45e...', url: '/360_images/11bdd45e-5276-4f9c-9e50-e2cd5b4c59ae.png' },
-    { name: '98f05e48...', url: '/360_images/98f05e48-0c4b-4a97-858e-55ba75be6336.png' },
-    { name: '3f59fb4a...', url: '/360_images/3f59fb4a-df51-4104-8ce0-a87305b0334b.png' },
-    { name: '7d64f729...', url: '/360_images/7d64f729-3efb-4cdd-a374-684ddde7d51a.png' },
-    { name: '2512f5ec...', url: '/360_images/2512f5ec-c51f-4e1d-8c8a-be05193dc2f9.png' },
-    { name: 'dd156928...', url: '/360_images/dd156928-99d4-409b-8fe6-5b5e01468487.png' },
-  ]
-
-  const SAMPLE_VIDEOS: { name: string; url: string }[] = []
-  const [viewMode, setViewMode] = useState<ViewMode>('spherical')
+  const [viewMode, setViewMode] = useState<ViewMode>('equirectangular')
   const [issues, setIssues] = useState<Issue[]>([])
   const [isLogging, setIsLogging] = useState(false)
   const [isMenuMinimized, setIsMenuMinimized] = useState(false)
@@ -96,34 +85,6 @@ function App() {
     const seconds = Math.floor(time % 60)
     return `${minutes}:${seconds.toString().padStart(2, '0')}`
   }
-
-  const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault()
-    e.stopPropagation()
-
-    console.log('File dropped')
-    const files = e.dataTransfer.files
-    if (files && files.length > 0) {
-      const file = files[0]
-      console.log('File type:', file.type)
-      if (file.type.startsWith('image/') || file.type.startsWith('video/')) {
-        const url = URL.createObjectURL(file)
-        console.log('Created URL:', url)
-        setMediaType(file.type.startsWith('video/') ? 'video' : 'image')
-        setMediaUrl((prev) => {
-          if (prev?.startsWith('blob:')) URL.revokeObjectURL(prev)
-          return url
-        })
-      } else {
-        alert('Please drop an image or video file.')
-      }
-    }
-  }, [])
-
-  const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault()
-    e.stopPropagation()
-  }, [])
 
   const handleMouseEnter = () => {
     if (autoMinimizeTimer.current) {
@@ -193,8 +154,6 @@ function App() {
   return (
     <div 
       style={{ width: '100%', height: '100vh', backgroundColor: '#0f172a', overflow: 'hidden', position: 'relative', display: 'flex' }}
-      onDrop={handleDrop}
-      onDragOver={handleDragOver}
     >
       <div style={{ flexGrow: 1, position: 'relative', height: '100%' }}>
         <Viewer 
@@ -262,38 +221,6 @@ function App() {
 
           {!isMenuMinimized && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <label style={{ 
-              cursor: 'pointer', 
-              background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', 
-              padding: '12px', 
-              borderRadius: 10, 
-              fontSize: 13, 
-              fontWeight: 600,
-              textAlign: 'center', 
-              display: 'block',
-              boxShadow: '0 2px 8px rgba(37, 99, 235, 0.25)',
-              transition: 'transform 0.1s',
-              border: '1px solid rgba(255,255,255,0.1)'
-            }}>
-              Upload Image / Video
-              <input 
-                type="file" 
-                accept="image/*,video/*" 
-                style={{ display: 'none' }}
-                onChange={(e) => {
-                  if (e.target.files && e.target.files[0]) {
-                    const file = e.target.files[0]
-                    const url = URL.createObjectURL(file)
-                    setMediaType(file.type.startsWith('video/') ? 'video' : 'image')
-                    setMediaUrl((prev) => {
-                      if (prev?.startsWith('blob:')) URL.revokeObjectURL(prev)
-                      return url
-                    })
-                  }
-                }}
-              />
-            </label>
-            
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               <label style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>View Mode</label>
               <select 
@@ -318,76 +245,6 @@ function App() {
                 <option value="rectilinear-right">Rectilinear Right</option>
               </select>
             </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <label style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Select Image</label>
-              <select 
-                onChange={(e) => {
-                  if (e.target.value) {
-                    setMediaType('image')
-                    setMediaUrl(e.target.value)
-                  }
-                }}
-                style={{ 
-                  background: 'rgba(0,0,0,0.3)', 
-                  color: '#f1f5f9', 
-                  borderRadius: 8, 
-                  border: '1px solid rgba(255,255,255,0.1)', 
-                  padding: '10px 12px', 
-                  fontSize: 13,
-                  outline: 'none',
-                  width: '100%'
-                }}
-                value={mediaType === 'image' ? (mediaUrl || '') : ''}
-              >
-                <option value="" disabled>Select an image...</option>
-                {SAMPLE_IMAGES.map((img) => (
-                  <option key={img.url} value={img.url}>
-                    {img.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              <label style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Select Video</label>
-              <select 
-                onChange={(e) => {
-                  if (e.target.value) {
-                    setMediaType('video')
-                    setMediaUrl(e.target.value)
-                  }
-                }}
-                style={{ 
-                  background: 'rgba(0,0,0,0.3)', 
-                  color: '#f1f5f9', 
-                  borderRadius: 8, 
-                  border: '1px solid rgba(255,255,255,0.1)', 
-                  padding: '10px 12px', 
-                  fontSize: 13,
-                  outline: 'none',
-                  width: '100%'
-                }}
-                value={mediaType === 'video' ? (mediaUrl || '') : ''}
-              >
-                <option value="" disabled>Select a video...</option>
-                {SAMPLE_VIDEOS.map((vid) => (
-                  <option key={vid.url} value={vid.url}>
-                    {vid.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <button 
-              onClick={() => {
-                setMediaType('image')
-                setMediaUrl('/default-panorama.png')
-              }}
-              style={{ background: 'rgba(255,255,255,0.05)', color: '#cbd5e1', border: '1px solid rgba(255,255,255,0.05)', padding: '10px', borderRadius: 8, fontSize: 12, cursor: 'pointer', transition: 'background 0.2s', display: 'none' }}
-            >
-              Load Default Image
-            </button>
 
             {viewMode === 'spherical' && (
               <>
