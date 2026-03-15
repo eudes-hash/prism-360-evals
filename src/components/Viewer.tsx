@@ -1,5 +1,5 @@
 import { Suspense, forwardRef, useImperativeHandle, useRef, useEffect, useState, useMemo, Component } from 'react'
-import type { ReactNode, ErrorInfo } from 'react'
+import type { ReactNode, ErrorInfo, ForwardedRef, RefObject } from 'react'
 import { Canvas, useThree } from '@react-three/fiber'
 import { OrbitControls, Sphere, Html, Plane, OrthographicCamera, PerspectiveCamera, View } from '@react-three/drei'
 import * as THREE from 'three'
@@ -603,7 +603,8 @@ const SphericalScene = ({
   videoRef,
   viewMode,
   onHover,
-  hoveredCoords
+  hoveredCoords,
+  viewerHandleRef
 }: {
   texture: THREE.Texture | null
   showGrid: boolean
@@ -613,12 +614,13 @@ const SphericalScene = ({
   viewMode: ViewMode
   onHover: (coords: { lat: number, lon: number } | null) => void
   hoveredCoords: { lat: number, lon: number } | null
+  viewerHandleRef?: ForwardedRef<ViewerRef>
 }) => {
   return (
     <>
       <PerspectiveCamera makeDefault fov={75} position={[0, 0, 0.1]} />
       <color attach="background" args={['#111']} />
-      <CameraController viewMode={viewMode === 'dual' ? 'spherical' : viewMode} videoRef={videoRef} />
+      <CameraController ref={viewerHandleRef} viewMode={viewMode === 'dual' ? 'spherical' : viewMode} videoRef={videoRef} />
       {texture && <ImageSphere texture={texture} viewMode="spherical" onHover={onHover} />}
       {showGrid && (
         <SphericalGridOverlay sectorOpacity={sectorOpacity} sectorColors={sectorColors} />
@@ -805,12 +807,12 @@ const Viewer = forwardRef<ViewerRef, ViewerProps>(({
         </div>
       )}
 
-      <Canvas eventSource={containerRef} className="canvas">
+      <Canvas eventSource={containerRef.current ?? undefined} className="canvas">
         <Suspense fallback={<Loader />}>
           <ErrorBoundary fallback={<ErrorFallback />}>
             {viewMode === 'dual' ? (
               <>
-                <View track={sphericalViewRef}>
+                <View track={sphericalViewRef as RefObject<HTMLElement>}>
                   <SphericalScene
                     texture={texture}
                     showGrid={showGrid}
@@ -820,9 +822,10 @@ const Viewer = forwardRef<ViewerRef, ViewerProps>(({
                     viewMode={viewMode}
                     onHover={setHoveredCoords}
                     hoveredCoords={hoveredCoords}
+                    viewerHandleRef={ref}
                   />
                 </View>
-                <View track={equirectangularViewRef}>
+                <View track={equirectangularViewRef as RefObject<HTMLElement>}>
                   <EquirectangularScene
                     texture={texture}
                     showSinusoidalGrid={showSinusoidalGrid}
@@ -837,7 +840,7 @@ const Viewer = forwardRef<ViewerRef, ViewerProps>(({
                 </View>
               </>
             ) : (
-              <View track={sphericalViewRef}>
+              <View track={sphericalViewRef as RefObject<HTMLElement>}>
                 {viewMode === 'equirectangular' ? (
                   <EquirectangularScene
                     texture={texture}
@@ -860,6 +863,7 @@ const Viewer = forwardRef<ViewerRef, ViewerProps>(({
                     viewMode={viewMode}
                     onHover={setHoveredCoords}
                     hoveredCoords={hoveredCoords}
+                    viewerHandleRef={ref}
                   />
                 )}
               </View>
