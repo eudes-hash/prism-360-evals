@@ -93,9 +93,21 @@ const lonLatToVector = (lonDeg: number, latDeg: number, radius: number) => {
   )
 }
 
-const CoordinateMarker3D = ({ coords }: { coords: { lat: number; lon: number } | null }) => {
+type HoveredCoordinate = {
+  lat: number
+  lon: number
+  planeUv?: { x: number; y: number }
+  spherePoint?: [number, number, number]
+}
+
+const logicalLonLatToSphereVector = (lonDeg: number, latDeg: number, radius: number) =>
+  lonLatToVector(offsetLongitudeRef(lonDeg), latDeg, radius)
+
+const CoordinateMarker3D = ({ coords }: { coords: HoveredCoordinate | null }) => {
   if (!coords) return null
-  const position = lonLatToVector(coords.lon, coords.lat, 495)
+  const position = coords.spherePoint
+    ? new THREE.Vector3(...coords.spherePoint).normalize().multiplyScalar(495)
+    : logicalLonLatToSphereVector(coords.lon, coords.lat, 495)
   return (
     <mesh position={position}>
       <sphereGeometry args={[8, 16, 16]} />
@@ -104,10 +116,10 @@ const CoordinateMarker3D = ({ coords }: { coords: { lat: number; lon: number } |
   )
 }
 
-const CoordinateMarker2D = ({ coords }: { coords: { lat: number; lon: number } | null }) => {
+const CoordinateMarker2D = ({ coords }: { coords: HoveredCoordinate | null }) => {
   if (!coords) return null
-  const x = coords.lon / 180
-  const y = coords.lat / 180
+  const x = coords.planeUv ? coords.planeUv.x * 2 - 1 : coords.lon / 180
+  const y = coords.planeUv ? coords.planeUv.y - 0.5 : coords.lat / 180
   
   return (
     <mesh position={[x, y, 0.02]}>
@@ -375,7 +387,7 @@ const ImageSphere = ({
 }: { 
   texture: THREE.Texture, 
   viewMode: ViewMode, 
-  onHover?: (coords: { lat: number, lon: number } | null) => void 
+  onHover?: (coords: HoveredCoordinate | null) => void 
 }) => {
 
   const handlePointerMove = (e: any) => {
@@ -384,7 +396,15 @@ const ImageSphere = ({
     if (!uv) return
     const lon = (uv.x - 0.5) * 360
     const lat = (uv.y - 0.5) * 180
-    onHover({ lat, lon })
+    const payload: HoveredCoordinate = { lat, lon }
+
+    if (viewMode === 'equirectangular') {
+      payload.planeUv = { x: uv.x, y: uv.y }
+    } else if (e.point) {
+      payload.spherePoint = [e.point.x, e.point.y, e.point.z]
+    }
+
+    onHover(payload)
   }
 
   const handlePointerOut = () => {
@@ -612,8 +632,8 @@ const SphericalScene = ({
   sectorColors: any
   videoRef: React.MutableRefObject<HTMLVideoElement | null>
   viewMode: ViewMode
-  onHover: (coords: { lat: number, lon: number } | null) => void
-  hoveredCoords: { lat: number, lon: number } | null
+  onHover: (coords: HoveredCoordinate | null) => void
+  hoveredCoords: HoveredCoordinate | null
   viewerHandleRef?: ForwardedRef<ViewerRef>
 }) => {
   return (
@@ -648,8 +668,8 @@ const EquirectangularScene = ({
   sectorOpacity: number
   sectorColors: any
   polarColors: any
-  onHover: (coords: { lat: number, lon: number } | null) => void
-  hoveredCoords: { lat: number, lon: number } | null
+  onHover: (coords: HoveredCoordinate | null) => void
+  hoveredCoords: HoveredCoordinate | null
 }) => {
   return (
     <>
@@ -686,7 +706,7 @@ const Viewer = forwardRef<ViewerRef, ViewerProps>(({
   const [texture, setTexture] = useState<THREE.Texture | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
   const videoRef = useRef<HTMLVideoElement | null>(null)
-  const [hoveredCoords, setHoveredCoords] = useState<{ lat: number, lon: number } | null>(null)
+  const [hoveredCoords, setHoveredCoords] = useState<HoveredCoordinate | null>(null)
 
   useEffect(() => {
     if (!mediaUrl) {
