@@ -282,6 +282,7 @@ function App() {
               >
                 <option value="spherical">Spherical (360°)</option>
                 <option value="equirectangular">Equirectangular (Plano)</option>
+                <option value="dual">Dual View (Split)</option>
                 <option value="rectilinear-front">Rectilinear Front</option>
                 <option value="rectilinear-back">Rectilinear Back</option>
                 <option value="rectilinear-left">Rectilinear Left</option>
