@@ -182,46 +182,26 @@ function App() {
 
   return (
     <div 
-      style={{ width: '100%', height: '100vh', backgroundColor: '#0f172a', overflow: 'hidden', position: 'relative', display: 'flex' }}
+      style={{ width: '100%', height: '100vh', backgroundColor: '#0f172a', overflow: 'hidden', display: 'flex', flexDirection: 'row' }}
       onDrop={handleDrop}
       onDragOver={handleDragOver}
     >
-      <div style={{ flexGrow: 1, position: 'relative', height: '100%' }}>
-        <Viewer 
-          ref={viewerRef} 
-          mediaUrl={mediaUrl}
-          mediaType={mediaType}
-          showGrid={showGrid} 
-          viewMode={viewMode}
-          showSinusoidalGrid={showSinusoidalGrid}
-          gridRotation={gridRotation}
-          gridDensity={gridDensity}
-          sectorOpacity={sectorOpacity}
-          sectorColors={sectorColors}
-          polarColors={polarColors}
-        />
-        
-        {/* Overlay UI */}
-        <div 
-          onMouseEnter={handleMouseEnter}
-          onMouseLeave={handleMouseLeave}
-          style={{ 
-          position: 'absolute',  
-          top: 20, 
-          left: 20, 
-          zIndex: 10, 
-          background: 'rgba(15, 23, 42, 0.75)', 
-          backdropFilter: 'blur(12px)',
-          padding: 20, 
-          borderRadius: 16, 
-          color: '#fff', 
+      {/* Sidebar Menu */}
+      <div 
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        style={{ 
           width: isMenuMinimized ? 240 : 340, 
-          maxHeight: 'calc(100vh - 40px)', 
-          overflowY: 'auto', 
-          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
-          boxShadow: '0 4px 24px -1px rgba(0, 0, 0, 0.2)'
-        }}>
+          background: '#0f172a', 
+          borderRight: '1px solid rgba(255, 255, 255, 0.1)',
+          display: 'flex',
+          flexDirection: 'column',
+          zIndex: 10,
+          transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          flexShrink: 0
+        }}
+      >
+        <div style={{ padding: 20 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: isMenuMinimized ? 0 : 20 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <img src="/logo.png" alt="Prism Logo" style={{ width: 32, height: 32, borderRadius: 8, objectFit: 'cover' }} />
@@ -251,7 +231,7 @@ function App() {
           </div>
 
           {!isMenuMinimized && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16, overflowY: 'auto', maxHeight: 'calc(100vh - 100px)' }}>
             <label style={{ 
               cursor: 'pointer', 
               background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', 
@@ -541,26 +521,65 @@ function App() {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Main Content Area */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ flex: 1, position: 'relative' }}>
+          <Viewer 
+            ref={viewerRef} 
+            mediaUrl={mediaUrl}
+            mediaType={mediaType}
+            showGrid={showGrid} 
+            viewMode={viewMode}
+            showSinusoidalGrid={showSinusoidalGrid}
+            gridRotation={gridRotation}
+            gridDensity={gridDensity}
+            sectorOpacity={sectorOpacity}
+            sectorColors={sectorColors}
+            polarColors={polarColors}
+          />
+          
+          {/* Issue Logging Modal */}
+          {isLogging && (
+            <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 20, backdropFilter: 'blur(4px)' }}>
+              <div style={{ background: '#1e293b', padding: 24, borderRadius: 16, width: 420, border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)' }}>
+                <h2 style={{ fontSize: 20, fontWeight: 700, color: '#fff', margin: '0 0 16px 0' }}>Log Issue</h2>
+                <textarea
+                  style={{ width: '100%', height: 130, background: '#0f172a', color: '#fff', padding: 12, borderRadius: 8, border: '1px solid #334155', marginBottom: 16, fontSize: 14, resize: 'none' }}
+                  placeholder="Describe the issue..."
+                  value={newIssueDesc}
+                  onChange={(e) => setNewIssueDesc(e.target.value)}
+                />
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
+                  <button 
+                    onClick={() => setIsLogging(false)}
+                    style={{ padding: '8px 16px', color: '#94a3b8', background: 'transparent', border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 500 }}
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    onClick={saveIssue}
+                    style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '8px 20px', borderRadius: 8, cursor: 'pointer', fontSize: 14, fontWeight: 600 }}
+                  >
+                    Save
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Bottom Control Bar */}
         {(mediaType === 'video' || viewMode === 'spherical') && (
           <div style={{ 
-            position: 'absolute', 
-            bottom: 30, 
-            left: '50%', 
-            transform: 'translateX(-50%)', 
-            width: '90%', 
-            maxWidth: 600, 
-            background: 'rgba(15, 23, 42, 0.85)', 
-            backdropFilter: 'blur(12px)', 
-            padding: '16px 24px', 
-            borderRadius: 16, 
-            border: '1px solid rgba(255, 255, 255, 0.1)', 
-            boxShadow: '0 4px 24px -1px rgba(0, 0, 0, 0.3)',
+            background: '#0f172a', 
+            borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+            padding: '16px 24px',
+            zIndex: 20,
             display: 'flex',
             flexDirection: 'column',
-            gap: 16,
-            zIndex: 20
+            gap: 16
           }}>
             {/* Video Controls */}
             {mediaType === 'video' && (
@@ -625,35 +644,6 @@ function App() {
                 </div>
               </div>
             )}
-          </div>
-        )}
-
-        {/* Issue Logging Modal */}
-        {isLogging && (
-          <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 20, backdropFilter: 'blur(4px)' }}>
-            <div style={{ background: '#1e293b', padding: 24, borderRadius: 16, width: 420, border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)' }}>
-              <h2 style={{ fontSize: 20, fontWeight: 700, color: '#fff', margin: '0 0 16px 0' }}>Log Issue</h2>
-              <textarea
-                style={{ width: '100%', height: 130, background: '#0f172a', color: '#fff', padding: 12, borderRadius: 8, border: '1px solid #334155', marginBottom: 16, fontSize: 14, resize: 'none' }}
-                placeholder="Describe the issue..."
-                value={newIssueDesc}
-                onChange={(e) => setNewIssueDesc(e.target.value)}
-              />
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
-                <button 
-                  onClick={() => setIsLogging(false)}
-                  style={{ padding: '8px 16px', color: '#94a3b8', background: 'transparent', border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 500 }}
-                >
-                  Cancel
-                </button>
-                <button 
-                  onClick={saveIssue}
-                  style={{ background: '#3b82f6', color: '#fff', border: 'none', padding: '8px 20px', borderRadius: 8, cursor: 'pointer', fontSize: 14, fontWeight: 600 }}
-                >
-                  Save
-                </button>
-              </div>
-            </div>
           </div>
         )}
       </div>
