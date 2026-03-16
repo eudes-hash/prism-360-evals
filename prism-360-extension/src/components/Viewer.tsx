@@ -1,12 +1,12 @@
 import { Suspense, forwardRef, useImperativeHandle, useRef, useEffect, useState, useMemo, Component } from 'react'
-import type { ReactNode, ErrorInfo } from 'react'
+import type { ReactNode, ErrorInfo, ForwardedRef } from 'react'
 import { Canvas, useThree } from '@react-three/fiber'
 import { OrbitControls, Sphere, Html, Plane, OrthographicCamera, PerspectiveCamera } from '@react-three/drei'
 import * as THREE from 'three'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import EquirectangularGrid from './EquirectangularGrid'
 
-export type ViewMode = 'spherical' | 'equirectangular' | 'rectilinear-front' | 'rectilinear-back' | 'rectilinear-left' | 'rectilinear-right'
+export type ViewMode = 'spherical' | 'equirectangular' | 'rectilinear-front' | 'rectilinear-back' | 'rectilinear-left' | 'rectilinear-right' | 'dual'
 
 class ErrorBoundary extends Component<{ children: ReactNode, fallback: ReactNode }, { hasError: boolean }> {
   constructor(props: any) {
@@ -90,6 +90,42 @@ const lonLatToVector = (lonDeg: number, latDeg: number, radius: number) => {
     Math.sin(lon) * cosLat * radius,
     Math.sin(lat) * radius,
     -Math.cos(lon) * cosLat * radius
+  )
+}
+
+type HoveredCoordinate = {
+  lat: number
+  lon: number
+  planeUv?: { x: number; y: number }
+  spherePoint?: [number, number, number]
+}
+
+const logicalLonLatToSphereVector = (lonDeg: number, latDeg: number, radius: number) =>
+  lonLatToVector(offsetLongitudeRef(lonDeg), latDeg, radius)
+
+const CoordinateMarker3D = ({ coords }: { coords: HoveredCoordinate | null }) => {
+  if (!coords) return null
+  const position = coords.spherePoint
+    ? new THREE.Vector3(...coords.spherePoint).normalize().multiplyScalar(495)
+    : logicalLonLatToSphereVector(coords.lon, coords.lat, 495)
+  return (
+    <mesh position={position}>
+      <sphereGeometry args={[8, 16, 16]} />
+      <meshBasicMaterial color="red" depthTest={false} transparent opacity={0.8} />
+    </mesh>
+  )
+}
+
+const CoordinateMarker2D = ({ coords }: { coords: HoveredCoordinate | null }) => {
+  if (!coords) return null
+  const x = coords.planeUv ? coords.planeUv.x * 2 - 1 : coords.lon / 180
+  const y = coords.planeUv ? coords.planeUv.y - 0.5 : coords.lat / 180
+  
+  return (
+    <mesh position={[x, y, 0.02]}>
+      <ringGeometry args={[0.015, 0.025, 32]} />
+      <meshBasicMaterial color="red" side={THREE.DoubleSide} depthTest={false} transparent opacity={0.8} />
+    </mesh>
   )
 }
 
@@ -344,18 +380,57 @@ const SphericalGridOverlay = ({
   )
 }
 
-const ImageSphere = ({ texture, viewMode }: { texture: THREE.Texture, viewMode: ViewMode }) => {
+const ImageSphere = ({ 
+  texture, 
+  viewMode, 
+  onHover 
+}: { 
+  texture: THREE.Texture, 
+  viewMode: ViewMode, 
+  onHover?: (coords: HoveredCoordinate | null) => void 
+}) => {
+
+  const handlePointerMove = (e: any) => {
+    if (!onHover) return
+    const uv = e.uv
+    if (!uv) return
+    const lon = (uv.x - 0.5) * 360
+    const lat = (uv.y - 0.5) * 180
+    const payload: HoveredCoordinate = { lat, lon }
+
+    if (viewMode === 'equirectangular') {
+      payload.planeUv = { x: uv.x, y: uv.y }
+    } else if (e.point) {
+      payload.spherePoint = [e.point.x, e.point.y, e.point.z]
+    }
+
+    onHover(payload)
+  }
+
+  const handlePointerOut = () => {
+    if (onHover) onHover(null)
+  }
 
   if (viewMode === 'equirectangular') {
     return (
-      <Plane args={[2, 1]} scale={[1, 1, 1]}>
+      <Plane 
+        args={[2, 1]} 
+        scale={[1, 1, 1]}
+        onPointerMove={handlePointerMove}
+        onPointerOut={handlePointerOut}
+      >
         <meshBasicMaterial map={texture} side={THREE.DoubleSide} />
       </Plane>
     )
   }
 
   return (
-    <Sphere args={[500, 60, 40]} scale={[-1, 1, 1]}>
+    <Sphere 
+      args={[500, 60, 40]} 
+      scale={[-1, 1, 1]}
+      onPointerMove={handlePointerMove}
+      onPointerOut={handlePointerOut}
+    >
       <meshBasicMaterial map={texture} side={THREE.BackSide} />
     </Sphere>
   )
@@ -551,6 +626,82 @@ const loadAsBlobUrl = async (value: string, signal: AbortSignal): Promise<string
   return URL.createObjectURL(blob)
 }
 
+const SphericalScene = ({
+  texture,
+  showGrid,
+  sectorOpacity,
+  sectorColors,
+  videoRef,
+  viewMode,
+  onHover,
+  hoveredCoords,
+  viewerHandleRef
+}: {
+  texture: THREE.Texture | null
+  showGrid: boolean
+  sectorOpacity: number
+  sectorColors: any
+  videoRef: React.MutableRefObject<HTMLVideoElement | null>
+  viewMode: ViewMode
+  onHover: (coords: HoveredCoordinate | null) => void
+  hoveredCoords: HoveredCoordinate | null
+  viewerHandleRef?: ForwardedRef<ViewerRef>
+}) => {
+  return (
+    <>
+      <PerspectiveCamera makeDefault fov={75} position={[0, 0, 0.1]} />
+      <color attach="background" args={['#111']} />
+      <CameraController ref={viewerHandleRef} viewMode={viewMode === 'dual' ? 'spherical' : viewMode} videoRef={videoRef} />
+      {texture && <ImageSphere texture={texture} viewMode="spherical" onHover={onHover} />}
+      {showGrid && (
+        <SphericalGridOverlay sectorOpacity={sectorOpacity} sectorColors={sectorColors} />
+      )}
+      <CoordinateMarker3D coords={hoveredCoords} />
+    </>
+  )
+}
+
+const EquirectangularScene = ({
+  texture,
+  showSinusoidalGrid,
+  gridRotation,
+  gridDensity,
+  sectorOpacity,
+  sectorColors,
+  polarColors,
+  onHover,
+  hoveredCoords
+}: {
+  texture: THREE.Texture | null
+  showSinusoidalGrid: boolean
+  gridRotation: number
+  gridDensity: number
+  sectorOpacity: number
+  sectorColors: any
+  polarColors: any
+  onHover: (coords: HoveredCoordinate | null) => void
+  hoveredCoords: HoveredCoordinate | null
+}) => {
+  return (
+    <>
+      <EquirectangularCamera />
+      <color attach="background" args={['#111']} />
+      {texture && <ImageSphere texture={texture} viewMode="equirectangular" onHover={onHover} />}
+      {showSinusoidalGrid && (
+        <EquirectangularGrid
+          visible={true}
+          rotationOffset={gridRotation}
+          lineDensity={gridDensity}
+          sectorOpacity={sectorOpacity}
+          sectorColors={sectorColors}
+          polarColors={polarColors}
+        />
+      )}
+      <CoordinateMarker2D coords={hoveredCoords} />
+    </>
+  )
+}
+
 const Viewer = forwardRef<ViewerRef, ViewerProps>(({
   mediaUrl,
   mediaType,
@@ -566,6 +717,7 @@ const Viewer = forwardRef<ViewerRef, ViewerProps>(({
   const [texture, setTexture] = useState<THREE.Texture | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
   const videoRef = useRef<HTMLVideoElement | null>(null)
+  const [hoveredCoords, setHoveredCoords] = useState<HoveredCoordinate | null>(null)
 
   useEffect(() => {
     if (!mediaUrl) {
@@ -687,35 +839,105 @@ const Viewer = forwardRef<ViewerRef, ViewerProps>(({
     }
   }, [mediaUrl, mediaType])
 
+  const coordinatePanel = hoveredCoords ? (
+    <div style={{
+      position: 'absolute',
+      top: 16,
+      right: 16,
+      background: 'rgba(0, 0, 0, 0.75)',
+      color: '#fff',
+      padding: '8px 12px',
+      borderRadius: 8,
+      fontSize: 12,
+      fontFamily: 'monospace',
+      zIndex: 100,
+      pointerEvents: 'none',
+      backdropFilter: 'blur(4px)',
+      border: '1px solid rgba(255,255,255,0.1)'
+    }}>
+      <div>Lat: {hoveredCoords.lat.toFixed(2)}°</div>
+      <div>Lon: {hoveredCoords.lon.toFixed(2)}°</div>
+    </div>
+  ) : null
+
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>
-      <Canvas>
-        {viewMode === 'equirectangular' ? (
-          <EquirectangularCamera />
-        ) : (
-          <PerspectiveCamera makeDefault fov={75} position={[0, 0, 0.1]} />
-        )}
-        <color attach="background" args={['#111']} />
-        <CameraController ref={ref} viewMode={viewMode} videoRef={videoRef} />
-        <Suspense fallback={<Loader />}>
-          <ErrorBoundary fallback={<ErrorFallback />}>
-            {texture && <ImageSphere key={`${mediaType}:${mediaUrl ?? 'empty'}`} texture={texture} viewMode={viewMode} />}
-          </ErrorBoundary>
-        </Suspense>
-        {showGrid && viewMode === 'spherical' && (
-          <SphericalGridOverlay sectorOpacity={sectorOpacity} sectorColors={sectorColors} />
-        )}
-        {showSinusoidalGrid && viewMode === 'equirectangular' && (
-          <EquirectangularGrid 
-            visible={true} 
-            rotationOffset={gridRotation} 
-            lineDensity={gridDensity}
-            sectorOpacity={sectorOpacity}
-            sectorColors={sectorColors}
-            polarColors={polarColors}
-          />
-        )}
-      </Canvas>
+      {viewMode === 'dual' ? (
+        <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ flex: 1, position: 'relative' }}>
+            <Canvas>
+              <Suspense fallback={<Loader />}>
+                <ErrorBoundary fallback={<ErrorFallback />}>
+                  <SphericalScene
+                    texture={texture}
+                    showGrid={showGrid}
+                    sectorOpacity={sectorOpacity}
+                    sectorColors={sectorColors}
+                    videoRef={videoRef}
+                    viewMode={viewMode}
+                    onHover={setHoveredCoords}
+                    hoveredCoords={hoveredCoords}
+                    viewerHandleRef={ref}
+                  />
+                </ErrorBoundary>
+              </Suspense>
+            </Canvas>
+          </div>
+          <div style={{ height: 2, background: '#333' }} />
+          <div style={{ flex: 1, position: 'relative' }}>
+            <Canvas>
+              <Suspense fallback={<Loader />}>
+                <ErrorBoundary fallback={<ErrorFallback />}>
+                  <EquirectangularScene
+                    texture={texture}
+                    showSinusoidalGrid={showSinusoidalGrid}
+                    gridRotation={gridRotation}
+                    gridDensity={gridDensity}
+                    sectorOpacity={sectorOpacity}
+                    sectorColors={sectorColors}
+                    polarColors={polarColors}
+                    onHover={setHoveredCoords}
+                    hoveredCoords={hoveredCoords}
+                  />
+                </ErrorBoundary>
+              </Suspense>
+            </Canvas>
+          </div>
+        </div>
+      ) : (
+        <Canvas>
+          <Suspense fallback={<Loader />}>
+            <ErrorBoundary fallback={<ErrorFallback />}>
+              {viewMode === 'equirectangular' ? (
+                <EquirectangularScene
+                  texture={texture}
+                  showSinusoidalGrid={showSinusoidalGrid}
+                  gridRotation={gridRotation}
+                  gridDensity={gridDensity}
+                  sectorOpacity={sectorOpacity}
+                  sectorColors={sectorColors}
+                  polarColors={polarColors}
+                  onHover={setHoveredCoords}
+                  hoveredCoords={hoveredCoords}
+                />
+              ) : (
+                <SphericalScene
+                  texture={texture}
+                  showGrid={showGrid}
+                  sectorOpacity={sectorOpacity}
+                  sectorColors={sectorColors}
+                  videoRef={videoRef}
+                  viewMode={viewMode}
+                  onHover={setHoveredCoords}
+                  hoveredCoords={hoveredCoords}
+                  viewerHandleRef={ref}
+                />
+              )}
+            </ErrorBoundary>
+          </Suspense>
+        </Canvas>
+      )}
+      {coordinatePanel}
       {!mediaUrl && (
         <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
           <p style={{ color: '#b6b6b6', fontSize: 18 }}>Drag & Drop an equirectangular image/video here</p>
