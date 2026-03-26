@@ -37,15 +37,6 @@ interface TaxonomyTourCommand {
   section?: 'video' | 'question' | 'answer' | 'temporal'
 }
 
-const SAMPLE_IMAGES = [
-  { name: 'e8347f4c...', url: '/360_images/e8347f4c-10c4-4699-86ee-b0d841299174.png' },
-  { name: '11bdd45e...', url: '/360_images/11bdd45e-5276-4f9c-9e50-e2cd5b4c59ae.png' },
-  { name: '98f05e48...', url: '/360_images/98f05e48-0c4b-4a97-858e-55ba75be6336.png' },
-  { name: '3f59fb4a...', url: '/360_images/3f59fb4a-df51-4104-8ce0-a87305b0334b.png' },
-  { name: '7d64f729...', url: '/360_images/7d64f729-3efb-4cdd-a374-684ddde7d51a.png' },
-  { name: '2512f5ec...', url: '/360_images/2512f5ec-c51f-4e1d-8c8a-be05193dc2f9.png' },
-  { name: 'dd156928...', url: '/360_images/dd156928-99d4-409b-8fe6-5b5e01468487.png' },
-]
 
 const SAMPLE_VIDEOS = [
   { name: 'e8347f4c...', url: '/360_videos/e8347f4c-10c4-4699-86ee-b0d841299174.mp4' },
