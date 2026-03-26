@@ -100,6 +100,71 @@ function App() {
   const extractedTaskId = ''
   const taskIdCheckMessage = ''
   const taskIdCopyMessage = ''
+
+  // Pre-fill data per video URL
+  type TaxonomyPrefill = {
+    realisticScene?: 'yes' | 'no' | ''
+    realisticSceneJustification?: string
+    is360?: 'yes' | 'no' | ''
+    is360Justification?: string
+    questionValid?: 'yes' | 'no' | ''
+    questionInvalidJustification?: string
+    questionFixSuggestion?: string
+    answerValid?: 'yes' | 'no' | ''
+    answerInvalidJustification?: string
+    answerFixSuggestion?: string
+    isTemporalCounting?: 'yes' | 'no' | ''
+    temporalCountingEvents?: Array<{ id: string; seconds: string }>
+  }
+  const VIDEO_PREFILLS: Record<string, TaxonomyPrefill> = {
+    '/360_videos/11bdd45e-5276-4f9c-9e50-e2cd5b4c59ae.mp4': {
+      realisticScene: 'yes',
+      is360: 'no',
+      is360Justification:
+        'The video is not 360° because spatial continuity is broken due to the join. On the left side of the line, there is a textured pastel blue painted wall with a bright wooden floor, with an entryway-style shelf cutoff on the line; while on the right side of the line, there is a beige painted wall with a clothes rack with hanging garments and a darker wooden floor, there is also a women wearing a gray sweater that emerges from the right side of the line.',
+      questionValid: 'no',
+      questionInvalidJustification:
+        'The question is not valid because the doorbell never rings during the scene. Since this event does not happen at any moment in the video, it is not possible to count how many times it rang. Therefore, the question cannot be answered.',
+      questionFixSuggestion:
+        'How many times does the woman with beige sweater touch the wooden shelf? (temporal counting question)',
+      answerValid: 'no',
+      answerInvalidJustification:
+        'The answer is invalid because the doorbell never rings in the video. Since this event does not occur at any point in the scene, the question itself is not valid, and the response claiming it rang three times is incorrect.',
+      answerFixSuggestion: 'The woman touches the wooden shelf two times.',
+      isTemporalCounting: 'yes',
+      temporalCountingEvents: [
+        { id: crypto.randomUUID(), seconds: '9.752' },
+        { id: crypto.randomUUID(), seconds: '10.653' },
+      ],
+    },
+    '/360_videos/2512f5ec-c51f-4e1d-8c8a-be05193dc2f9.mp4': {
+      realisticScene: 'yes',
+      is360: 'yes',
+      questionValid: 'no',
+      questionInvalidJustification:
+        'The question is not answerable because the melody never stops at any point in the video, so there is no moment when it would need to be started again. Additionally, the action of winding the toy cannot be visually confirmed. Although the woman moves her hand near the toy, the motion does not match the typical downward pulling movement required to wind a mobile. Since neither the stopping of the melody nor the winding action can be verified, the event described in the question cannot be determined.',
+      questionFixSuggestion:
+        'How many times does the person in the video rocks in the rocking chair back and forth, counting the whole movement as one? (temporal counting question)',
+      answerValid: 'no',
+      answerInvalidJustification:
+        "The answer is invalid because it refers to events that cannot be verified in the video. The melody never stops, and the woman's hand movements do not clearly correspond to the action of winding the mobile. Since the described action cannot be confirmed, the answer does not match the observable events in the video.",
+      answerFixSuggestion: 'The person rock in the rocking chair five times.',
+      isTemporalCounting: 'yes',
+      temporalCountingEvents: [
+        { id: crypto.randomUUID(), seconds: '2.931' },
+        { id: crypto.randomUUID(), seconds: '5.026' },
+        { id: crypto.randomUUID(), seconds: '7.208' },
+        { id: crypto.randomUUID(), seconds: '9.262' },
+        { id: crypto.randomUUID(), seconds: '11.804' },
+      ],
+    },
+    '/360_videos/3f59fb4a-df51-4104-8ce0-a87305b0334b.mp4': {
+      realisticScene: 'no',
+      realisticSceneJustification:
+        'The video is not realistic, as it can be seen throughout the recording that hands are manipulating the printer paper, but these hands do not come from a human body; they simply appear out of nowhere, and in turn disappear and reappear in a completely unnatural way.',
+    },
+  }
+  const currentPrefill = mediaUrl ? (VIDEO_PREFILLS[mediaUrl] ?? undefined) : undefined
   
   const viewerRef = useRef<ViewerRef>(null)
   const tourDriverRef = useRef<ReturnType<typeof driver> | null>(null)
@@ -371,6 +436,7 @@ function App() {
             evalResult={evalResult}
             evalError={evalError}
             isBlocked={isBlocked}
+            prefillDraft={currentPrefill}
             clearEvalResult={clearResult}
             submitTaskTime={submitTaskTime}
           />

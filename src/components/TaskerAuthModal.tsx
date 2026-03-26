@@ -10,11 +10,11 @@ export default function TaskerAuthModal({ onSave }: TaskerAuthModalProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (email.trim().toLowerCase().endsWith('@expert.micro1.ai')) {
+    if (email.trim().toLowerCase() === 'test@expert.micro1.ai') {
       setError('');
       onSave(email.trim());
     } else {
-      setError('Only @expert.micro1.ai emails are allowed.');
+      setError('Access restricted. Only authorized emails are allowed.');
     }
   };
 
@@ -82,7 +82,7 @@ export default function TaskerAuthModal({ onSave }: TaskerAuthModalProps) {
             <input
               autoFocus
               type="email"
-              placeholder="user@expert.micro1.ai"
+              placeholder="test@expert.micro1.ai"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required

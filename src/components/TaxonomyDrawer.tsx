@@ -38,6 +38,7 @@ interface TaxonomyDrawerProps {
   featherAnswer: string
   featherQaMessage: string
   taskId: string
+  prefillDraft?: Partial<TaxonomyDraft>
   taskIdStatusMessage: string
   taskIdCopyMessage: string
   onCopyTaskId: () => void
@@ -246,6 +247,7 @@ export default function TaxonomyDrawer({
   isBlocked,
   clearEvalResult,
   submitTaskTime,
+  prefillDraft,
 }: TaxonomyDrawerProps) {
   const [draft, setDraft] = useState<TaxonomyDraft>(parseStoredDraft)
   const [timerSeconds, setTimerSeconds] = useState(0)
@@ -271,6 +273,19 @@ export default function TaxonomyDrawer({
       setTimerSeconds(0)
     }
   }, [taskId, clearEvalResult])
+
+  useEffect(() => {
+    if (!prefillDraft) return
+    setDraft((prev) => ({
+      ...DEFAULT_DRAFT,
+      ...prev,
+      ...prefillDraft,
+      temporalCountingEvents:
+        prefillDraft.temporalCountingEvents && prefillDraft.temporalCountingEvents.length > 0
+          ? prefillDraft.temporalCountingEvents
+          : prev.temporalCountingEvents,
+    }))
+  }, [prefillDraft])
 
   useEffect(() => {
     if (!taskId) return
