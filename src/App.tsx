@@ -240,7 +240,7 @@ function App() {
   ]
 
   const prepareTourDemo = () => {
-    setTourDemoMode('interactive_prefill'); setIsMenuMinimized(false); setMediaType('video'); setMediaUrl(GUIDE_TOUR_SAMPLE_VIDEO_URL); setViewMode('spherical'); setShowGrid(true); setShowSinusoidalGrid(false); setIsEventTaggerOpen(true); setShowEventCenterGuide(true); setEventValidationMessage(''); setHoveredTimelineEventId(null)
+    setTourDemoMode('interactive_prefill'); setMediaType('video'); setMediaUrl(GUIDE_TOUR_SAMPLE_VIDEO_URL); setViewMode('spherical'); setShowGrid(true); setShowSinusoidalGrid(false); setIsEventTaggerOpen(true); setShowEventCenterGuide(true); setEventValidationMessage(''); setHoveredTimelineEventId(null)
     const cameraState = viewerRef.current?.getCameraState() ?? { position: new THREE.Vector3(0, 0, 0.1), target: new THREE.Vector3(0, 0, -1), fov: 95 }
     setTaggedEvents(buildDemoEvents(cameraState)); setTaxonomyTourAction({ action: 'prefill-demo' })
   }
