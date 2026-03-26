@@ -6,11 +6,15 @@ interface TaskerAuthModalProps {
 
 export default function TaskerAuthModal({ onSave }: TaskerAuthModalProps) {
   const [email, setEmail] = useState('');
+  const [error, setError] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (email.trim() && email.includes('@')) {
+    if (email.trim().toLowerCase().endsWith('@expert.micro1.ai')) {
+      setError('');
       onSave(email.trim());
+    } else {
+      setError('Only @expert.micro1.ai emails are allowed.');
     }
   };
 
@@ -95,6 +99,9 @@ export default function TaskerAuthModal({ onSave }: TaskerAuthModalProps) {
               onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
               onBlur={(e) => e.target.style.borderColor = 'rgba(255, 255, 255, 0.1)'}
             />
+            {error && (
+              <span style={{ color: '#f87171', fontSize: 12 }}>{error}</span>
+            )}
           </div>
 
           <button
