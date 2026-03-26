@@ -59,7 +59,7 @@ function App() {
   const [mediaType, setMediaType] = useState<'image' | 'video'>('video')
 
   const [showGrid, setShowGrid] = useState(true)
-  const [showSinusoidalGrid, setShowSinusoidalGrid] = useState(false)
+  const [showSinusoidalGrid, setShowSinusoidalGrid] = useState(true)
   const [gridRotation, setGridRotation] = useState(0)
   const [gridDensity, setGridDensity] = useState(8)
   const [sectorOpacity, setSectorOpacity] = useState(0.22)
