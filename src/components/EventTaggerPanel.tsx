@@ -141,7 +141,7 @@ export default function EventTaggerPanel({
                 cursor: events.length > 0 ? 'not-allowed' : 'pointer'
               }}
             >
-              <option value="general">General (Max 1)</option>
+              <option value="general">General (Max 10)</option>
               <option value="temporal_counting">Temporal Counting (Multiple)</option>
               <option value="no_realistic" disabled={realisticScene !== 'no'}>
                 No Realistic {realisticScene !== 'no' ? '(Requires "No" in form)' : '(Multiple)'}

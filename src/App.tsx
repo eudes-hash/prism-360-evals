@@ -199,8 +199,8 @@ function App() {
     if (eventDraft.endSeconds < eventDraft.startSeconds) { setEventValidationMessage('End must be greater than or equal to Start.'); return }
     if (!eventDraft.cameraState) { setEventValidationMessage('Camera snapshot is missing. Use Set Start again.'); return }
     const appliedType = taggedEvents.length > 0 ? taggedEvents[0].type : eventDraft.type
-    if (appliedType === 'general' && taggedEvents.some(e => e.type === 'general')) {
-      setEventValidationMessage('Only 1 General event is allowed.'); return
+    if (appliedType === 'general' && taggedEvents.filter(e => e.type === 'general').length >= 10) {
+      setEventValidationMessage('Maximum 10 General events allowed.'); return
     }
     setTaggedEvents((prev) => [{ id: Date.now().toString(), type: appliedType, startSeconds: eventDraft.startSeconds!, endSeconds: eventDraft.endSeconds!, cameraState: eventDraft.cameraState!, createdAt: Date.now() }, ...prev])
     clearEventDraft()
