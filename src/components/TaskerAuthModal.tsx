@@ -26,7 +26,7 @@ export default function TaskerAuthModal({ onSave }: TaskerAuthModalProps) {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      zIndex: 1000,
+      zIndex: 2147483647,
       animation: 'fadeIn 0.3s ease-out'
     }}>
       <style>
