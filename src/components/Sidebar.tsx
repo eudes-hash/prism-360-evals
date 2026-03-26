@@ -53,25 +53,18 @@ function Sidebar({
 }: SidebarProps) {
   return (
     <div
-      style={{ width: isMenuMinimized ? 86 : 330, background: '#0f172a', borderRight: '1px solid rgba(255,255,255,0.1)', display: 'flex', flexDirection: 'column', zIndex: 10, transition: 'width 0.3s cubic-bezier(0.4,0,0.2,1)', flexShrink: 0 }}
-      onMouseMove={onInteract}
-      onClick={onInteract}
+    <div
+      style={{ width: 300, background: '#0f172a', borderRight: '1px solid rgba(255,255,255,0.1)', display: 'flex', flexDirection: 'column', zIndex: 10, flexShrink: 0 }}
     >
-      <div style={{ padding: isMenuMinimized ? 10 : 20 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: isMenuMinimized ? 'center' : 'space-between', flexDirection: isMenuMinimized ? 'column' : 'row', gap: isMenuMinimized ? 10 : 0, marginBottom: isMenuMinimized ? 0 : 20 }}>
+      <div style={{ padding: 20 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <img src="/logo.png" alt="Prism Logo" style={{ width: isMenuMinimized ? 28 : 32, height: isMenuMinimized ? 28 : 32, borderRadius: 8, objectFit: 'cover' }} />
-            {!isMenuMinimized && (
-              <h1 style={{ fontSize: 18, fontWeight: 700, margin: 0, letterSpacing: '-0.02em', background: 'linear-gradient(to right, #fff, #94a3b8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Prism 360°</h1>
-            )}
+            <img src="/logo.png" alt="Prism Logo" style={{ width: 32, height: 32, borderRadius: 8, objectFit: 'cover' }} />
+            <h1 style={{ fontSize: 18, fontWeight: 700, margin: 0, letterSpacing: '-0.02em', background: 'linear-gradient(to right, #fff, #94a3b8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Prism 360°</h1>
           </div>
-          <button onClick={onToggleMinimized} aria-label={isMenuMinimized ? 'Expand sidebar' : 'Collapse sidebar'} style={{ background: 'rgba(255,255,255,0.05)', color: '#94a3b8', border: 'none', borderRadius: 6, fontSize: 12, padding: isMenuMinimized ? '6px 8px' : '6px 10px', cursor: 'pointer', transition: 'all 0.2s', fontWeight: 500 }}>
-            {isMenuMinimized ? '>' : 'Hide'}
-          </button>
         </div>
 
-        {!isMenuMinimized && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16, overflowY: 'auto', maxHeight: 'calc(100vh - 100px)' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, overflowY: 'auto', maxHeight: 'calc(100vh - 100px)' }}>
             {topSection}
             <div data-tour="view-mode" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               <label style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>View Mode</label>
@@ -174,7 +167,6 @@ function Sidebar({
               </button>
             </div>
           </div>
-        )}
       </div>
     </div>
   )

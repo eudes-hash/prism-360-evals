@@ -76,24 +76,6 @@ function App() {
   const [isLogging, setIsLogging] = useState(false)
   const [newIssueDesc, setNewIssueDesc] = useState('')
 
-  const [isMenuMinimized, setIsMenuMinimized] = useState(false)
-  const sidebarTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  const resetSidebarTimer = useCallback(() => {
-    if (sidebarTimerRef.current) clearTimeout(sidebarTimerRef.current)
-    sidebarTimerRef.current = setTimeout(() => setIsMenuMinimized(true), 10000)
-  }, [])
-
-  useEffect(() => {
-    resetSidebarTimer()
-    return () => { if (sidebarTimerRef.current) clearTimeout(sidebarTimerRef.current) }
-  }, [resetSidebarTimer])
-
-  useEffect(() => {
-    const t = setTimeout(() => window.dispatchEvent(new Event('resize')), 320)
-    return () => clearTimeout(t)
-  }, [isMenuMinimized])
-
   const [isPlaying, setIsPlaying] = useState(true)
   const [videoProgress, setVideoProgress] = useState(0)
   const [videoDuration, setVideoDuration] = useState(0)
@@ -315,9 +297,9 @@ function App() {
       onDragOver={handleDragOver}
     >
       <Sidebar
-        isMenuMinimized={isMenuMinimized}
-        onToggleMinimized={() => { setIsMenuMinimized((prev) => !prev); resetSidebarTimer() }}
-        onInteract={resetSidebarTimer}
+        isMenuMinimized={false}
+        onToggleMinimized={() => {}}
+        onInteract={() => {}}
         viewMode={viewMode} onViewModeChange={handleViewModeChange}
         showGrid={showGrid} onToggleGrid={() => setShowGrid((v) => !v)}
         sectorOpacity={sectorOpacity} onSectorOpacityChange={setSectorOpacity}
