@@ -32,6 +32,7 @@ interface SidebarProps {
   taskerEmail: string
   onClearEmail: () => void
   topSection?: ReactNode
+  onInteract?: () => void
 }
 
 function Sidebar({
@@ -48,10 +49,13 @@ function Sidebar({
   isTourRunning, tourStep, tourDemoMode, onStartGuideTour,
   taskerEmail, onClearEmail,
   topSection,
+  onInteract,
 }: SidebarProps) {
   return (
     <div
       style={{ width: isMenuMinimized ? 86 : 330, background: '#0f172a', borderRight: '1px solid rgba(255,255,255,0.1)', display: 'flex', flexDirection: 'column', zIndex: 10, transition: 'width 0.3s cubic-bezier(0.4,0,0.2,1)', flexShrink: 0 }}
+      onMouseMove={onInteract}
+      onClick={onInteract}
     >
       <div style={{ padding: isMenuMinimized ? 10 : 20 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: isMenuMinimized ? 'center' : 'space-between', flexDirection: isMenuMinimized ? 'column' : 'row', gap: isMenuMinimized ? 10 : 0, marginBottom: isMenuMinimized ? 0 : 20 }}>
