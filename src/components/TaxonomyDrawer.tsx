@@ -741,9 +741,6 @@ export default function TaxonomyDrawer({
               45% { transform: scale(1.15); }
               70% { transform: scale(1); }
             }
-            .mascot-pulse {
-              animation: heartbeat 2s infinite ease-in-out;
-            }
           `}
         </style>
         <header
@@ -1324,56 +1321,6 @@ export default function TaxonomyDrawer({
               </div>
             )}
           </Section>
-        </div>
-
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 16,
-            padding: '16px',
-            background: 'rgba(15, 23, 42, 0.45)',
-            borderRadius: 12,
-            border: `1px solid ${allChecksPassed ? 'rgba(56, 189, 248, 0.4)' : 'rgba(148, 163, 184, 0.2)'}`,
-          }}
-        >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 4, textAlign: 'right' }}>
-            <span style={{ color: allChecksPassed ? '#e0f2fe' : '#94a3b8', fontSize: 14, fontWeight: 700 }}>
-              {evalLoading ? 'Verifying with Prismy...' : 'Check your work with Prismy'} ✨
-            </span>
-            {!allChecksPassed && (
-              <span style={{ color: '#64748b', fontSize: 11 }}>All taxonomy sections must be completed first</span>
-            )}
-            {evalError && (
-              <span style={{ color: '#f87171', fontSize: 11 }}>Error: {evalError}</span>
-            )}
-            {evalResult && (
-              <span style={{ color: evalResult.passed ? '#4ade80' : '#fbbf24', fontSize: 12, fontWeight: 600 }}>
-                {evalResult.passed ? '✅' : '⚠️'} {evalResult.summary}
-              </span>
-            )}
-          </div>
-          <button
-            type="button"
-            className={(allChecksPassed && !isBlocked && !evalLoading) ? 'mascot-pulse' : ''}
-            onClick={() => runEvaluation(draft, taskId)}
-            disabled={!allChecksPassed || isBlocked || evalLoading}
-            style={{
-              background: 'none',
-              border: 'none',
-              padding: 0,
-              cursor: (!allChecksPassed || isBlocked || evalLoading) ? 'not-allowed' : 'pointer',
-              transition: 'all 0.2s',
-            }}
-            title={!allChecksPassed ? 'Complete all sections before checking.' : 'Check with AI'}
-          >
-            <img
-              src="/Prismy.png"
-              alt="Prismy Mascot"
-              style={{ width: 112, height: 112, filter: 'drop-shadow(0px 0px 8px rgba(56, 189, 248, 0.5))' }}
-            />
-          </button>
         </div>
 
         <section
