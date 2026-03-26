@@ -55,17 +55,17 @@ function App() {
     clearResult, isBlocked, taskerEmail, saveEmail, clearEmail, submitTaskTime
   } = useEvalSystem()
 
-  const [mediaUrl, setMediaUrl] = useState<string | null>('/360_images/e8347f4c-10c4-4699-86ee-b0d841299174.png')
-  const [mediaType, setMediaType] = useState<'image' | 'video'>('image')
+  const [mediaUrl, setMediaUrl] = useState<string | null>('/360_videos/11bdd45e-5276-4f9c-9e50-e2cd5b4c59ae.mp4')
+  const [mediaType, setMediaType] = useState<'image' | 'video'>('video')
 
-  const [showGrid, setShowGrid] = useState(false)
+  const [showGrid, setShowGrid] = useState(true)
   const [showSinusoidalGrid, setShowSinusoidalGrid] = useState(false)
   const [gridRotation, setGridRotation] = useState(0)
   const [gridDensity, setGridDensity] = useState(8)
   const [sectorOpacity, setSectorOpacity] = useState(0.22)
   const [sectorColors, setSectorColors] = useState({ front: '#2ecc71', right: '#f39c12', back: '#e74c3c', left: '#3498db' })
   const [polarColors, setPolarColors] = useState({ top: '#8b5cf6', bottom: '#0ea5e9' })
-  const [viewMode, setViewMode] = useState<ViewMode>('spherical')
+  const [viewMode, setViewMode] = useState<ViewMode>('equirectangular')
 
   const handleViewModeChange = (mode: ViewMode) => {
     setViewMode(mode)
@@ -391,10 +391,9 @@ function App() {
           {!taskerEmail && <TaskerAuthModal onSave={saveEmail} />}
         </div>
 
-        {(mediaType === 'video' || viewMode === 'spherical') && (
+        {mediaType === 'video' && (
           <div style={{ background: '#0f172a', borderTop: '1px solid rgba(255,255,255,0.1)', padding: '16px 24px', zIndex: 20, display: 'flex', flexDirection: 'column', gap: 16 }}>
-            {mediaType === 'video' && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                 <button onClick={handleTogglePlay} style={{ background: isPlaying ? 'rgba(255,255,255,0.2)' : '#3b82f6', border: 'none', borderRadius: '50%', width: 40, height: 40, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', transition: 'all 0.2s' }}>
                   {isPlaying
                     ? <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
@@ -436,7 +435,6 @@ function App() {
                   </div>
                 </div>
               </div>
-            )}
           </div>
         )}
       </div>
