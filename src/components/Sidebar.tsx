@@ -72,7 +72,7 @@ function Sidebar({
             <div data-tour="view-mode" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               <label style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>View Mode</label>
               <select value={viewMode} onChange={(e) => onViewModeChange(e.target.value as ViewMode)} style={{ background: 'rgba(0,0,0,0.3)', color: '#f1f5f9', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', padding: '10px 12px', fontSize: 13, outline: 'none', width: '100%' }}>
-                <option value="spherical">Equirectangular (360°)</option>
+                <option value="spherical">Spherical 360</option>
                 <option value="equirectangular">Flat</option>
                 <option value="dual">Dual View (Split)</option>
               </select>
