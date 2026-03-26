@@ -67,6 +67,11 @@ function App() {
   const [polarColors, setPolarColors] = useState({ top: '#8b5cf6', bottom: '#0ea5e9' })
   const [viewMode, setViewMode] = useState<ViewMode>('spherical')
 
+  const handleViewModeChange = (mode: ViewMode) => {
+    setViewMode(mode)
+    if (mode === 'equirectangular') setShowGrid(true)
+  }
+
   const [issues, setIssues] = useState<Issue[]>([])
   const [isLogging, setIsLogging] = useState(false)
   const [newIssueDesc, setNewIssueDesc] = useState('')
@@ -288,7 +293,7 @@ function App() {
       <Sidebar
         isMenuMinimized={isMenuMinimized}
         onToggleMinimized={() => setIsMenuMinimized((prev) => !prev)}
-        viewMode={viewMode} onViewModeChange={setViewMode}
+        viewMode={viewMode} onViewModeChange={handleViewModeChange}
         showGrid={showGrid} onToggleGrid={() => setShowGrid((v) => !v)}
         sectorOpacity={sectorOpacity} onSectorOpacityChange={setSectorOpacity}
         sectorColors={sectorColors} onSectorColorChange={(sector, color) => setSectorColors((prev) => ({ ...prev, [sector]: color }))}
