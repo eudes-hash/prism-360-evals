@@ -804,7 +804,7 @@ const Viewer = forwardRef<ViewerRef, ViewerProps>(({
   const coordinatePanel = hoveredCoords ? (
     <div style={{
       position: 'absolute',
-      top: 16,
+      bottom: 16,
       right: 16,
       background: 'rgba(0, 0, 0, 0.75)',
       color: '#fff',
