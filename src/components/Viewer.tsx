@@ -57,6 +57,7 @@ export interface ViewerRef {
   getCameraState: () => { position: THREE.Vector3; target: THREE.Vector3; fov: number }
   setCameraState: (state: { position: THREE.Vector3; target: THREE.Vector3; fov: number }) => void
   getCenterCoordinate: () => { lat: number; lon: number } | null
+  getHoveredCoordinate: () => { lat: number; lon: number } | null
   adjustSphericalZoom: (deltaFov: number) => void
   togglePlay: () => void
   setVideoTime: (time: number) => void
@@ -718,6 +719,28 @@ const Viewer = forwardRef<ViewerRef, ViewerProps>(({
   const [loadError, setLoadError] = useState<string | null>(null)
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const [hoveredCoords, setHoveredCoords] = useState<HoveredCoordinate | null>(null)
+  const hoveredCoordsRef = useRef<HoveredCoordinate | null>(null)
+  const cameraInternalRef = useRef<ViewerRef | null>(null)
+
+  useEffect(() => { hoveredCoordsRef.current = hoveredCoords }, [hoveredCoords])
+
+  useImperativeHandle(ref, () => ({
+    getCameraState: () => cameraInternalRef.current?.getCameraState() ?? { position: new THREE.Vector3(0, 0, 0.1), target: new THREE.Vector3(0, 0, -1), fov: 75 },
+    setCameraState: (state) => cameraInternalRef.current?.setCameraState(state),
+    getCenterCoordinate: () => cameraInternalRef.current?.getCenterCoordinate() ?? null,
+    getHoveredCoordinate: () => hoveredCoordsRef.current ? { lat: hoveredCoordsRef.current.lat, lon: hoveredCoordsRef.current.lon } : null,
+    adjustSphericalZoom: (deltaFov) => cameraInternalRef.current?.adjustSphericalZoom(deltaFov),
+    togglePlay: () => {
+      if (videoRef.current) {
+        if (videoRef.current.paused) videoRef.current.play().catch(console.error)
+        else videoRef.current.pause()
+      }
+    },
+    setVideoTime: (time) => { if (videoRef.current) videoRef.current.currentTime = time },
+    getVideoState: () => videoRef.current
+      ? { isPlaying: !videoRef.current.paused, currentTime: videoRef.current.currentTime, duration: videoRef.current.duration || 0 }
+      : { isPlaying: false, currentTime: 0, duration: 0 },
+  }))
 
   useEffect(() => {
     if (!mediaUrl) {
@@ -839,7 +862,7 @@ const Viewer = forwardRef<ViewerRef, ViewerProps>(({
                     viewMode={viewMode}
                     onHover={setHoveredCoords}
                     hoveredCoords={hoveredCoords}
-                    viewerHandleRef={ref}
+                    viewerHandleRef={cameraInternalRef}
                   />
                 </ErrorBoundary>
               </Suspense>
@@ -892,7 +915,7 @@ const Viewer = forwardRef<ViewerRef, ViewerProps>(({
                   viewMode={viewMode}
                   onHover={setHoveredCoords}
                   hoveredCoords={hoveredCoords}
-                  viewerHandleRef={ref}
+                  viewerHandleRef={cameraInternalRef}
                 />
               )}
             </ErrorBoundary>
@@ -915,6 +938,24 @@ const Viewer = forwardRef<ViewerRef, ViewerProps>(({
             <line x1="16" y1="2" x2="16" y2="30" stroke="rgba(255,255,255,0.85)" strokeWidth="1.5" strokeDasharray="3 2" />
             <line x1="2" y1="16" x2="30" y2="16" stroke="rgba(255,255,255,0.85)" strokeWidth="1.5" strokeDasharray="3 2" />
             <circle cx="16" cy="16" r="4" stroke="rgba(255,255,255,0.9)" strokeWidth="1.5" fill="none" />
+          </svg>
+        </div>
+      )}
+      {showCenterGuide && viewMode === 'equirectangular' && hoveredCoords && (
+        <div
+          style={{
+            position: 'absolute',
+            left: `${((hoveredCoords.lon + 180) / 360) * 100}%`,
+            top: `${((90 - hoveredCoords.lat) / 180) * 100}%`,
+            transform: 'translate(-50%, -50%)',
+            pointerEvents: 'none',
+            zIndex: 50,
+          }}
+        >
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+            <line x1="16" y1="2" x2="16" y2="30" stroke="rgba(255,140,0,0.9)" strokeWidth="1.5" strokeDasharray="3 2" />
+            <line x1="2" y1="16" x2="30" y2="16" stroke="rgba(255,140,0,0.9)" strokeWidth="1.5" strokeDasharray="3 2" />
+            <circle cx="16" cy="16" r="4" stroke="rgba(255,140,0,1)" strokeWidth="1.5" fill="none" />
           </svg>
         </div>
       )}

@@ -183,7 +183,15 @@ function App() {
   const handleCaptureEventStart = () => {
     if (!viewerRef.current) { setEventValidationMessage('Viewer is not ready yet.'); return }
     const currentTime = viewerRef.current.getVideoState().currentTime
-    setEventDraft((prev) => ({ ...prev, startSeconds: currentTime, cameraState: viewerRef.current!.getCameraState(), endSeconds: prev.endSeconds !== null && prev.endSeconds < currentTime ? null : prev.endSeconds }))
+    const cameraState = viewMode === 'equirectangular'
+      ? (() => {
+          const hov = viewerRef.current!.getHoveredCoordinate()
+          if (!hov) { setEventValidationMessage('Hover over the image to set a position first.'); return null }
+          return { position: new THREE.Vector3(hov.lon, hov.lat, 0), target: new THREE.Vector3(0, 0, -1), fov: 0 }
+        })()
+      : viewerRef.current.getCameraState()
+    if (!cameraState) return
+    setEventDraft((prev) => ({ ...prev, startSeconds: currentTime, cameraState, endSeconds: prev.endSeconds !== null && prev.endSeconds < currentTime ? null : prev.endSeconds }))
     setEventValidationMessage('')
   }
   const handleCaptureEventEnd = () => {
