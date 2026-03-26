@@ -436,7 +436,13 @@ function App() {
                         })}
                       </div>
                     )}
-                    <input type="range" min="0" max={videoDuration || 100} step="0.1" value={videoProgress} onChange={handleSeek} style={{ width: '100%', accentColor: '#3b82f6', height: 4, cursor: 'pointer', position: 'relative', zIndex: 1 }} />
+                    <div style={{ position: 'relative', width: '100%', height: 20, display: 'flex', alignItems: 'center', zIndex: 1 }}>
+                      <div style={{ position: 'absolute', left: 0, right: 0, height: 6, borderRadius: 999, background: 'rgba(148,163,184,0.25)' }} />
+                      <div style={{ position: 'absolute', left: 0, height: 6, borderRadius: 999, background: '#3b82f6', width: `${videoDuration ? (videoProgress / videoDuration) * 100 : 0}%`, transition: 'width 0.1s linear' }} />
+                      <input type="range" min="0" max={videoDuration || 100} step="0.1" value={videoProgress} onChange={handleSeek}
+                        style={{ position: 'absolute', left: 0, right: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer', margin: 0, padding: 0 }} />
+                      <div style={{ position: 'absolute', left: `${videoDuration ? (videoProgress / videoDuration) * 100 : 0}%`, transform: 'translateX(-50%)', width: 14, height: 14, borderRadius: '50%', background: '#fff', boxShadow: '0 0 0 2px #3b82f6', pointerEvents: 'none', transition: 'left 0.1s linear' }} />
+                    </div>
                     {hoveredTimelineEvent && (
                       <div style={{ position: 'absolute', left: `${hoveredTimelineEvent.startPercent}%`, bottom: 34, transform: 'translateX(-50%)', background: 'rgba(2,6,23,0.94)', border: '1px solid rgba(148,163,184,0.35)', borderRadius: 6, padding: '3px 6px', minWidth: 90, maxWidth: 160, color: '#e2e8f0', fontSize: 10, lineHeight: 1.15, zIndex: 3, pointerEvents: 'none' }}>
                         <div style={{ fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textTransform: 'capitalize' }}>{hoveredTimelineEvent.type.replace('_', ' ')}</div>
