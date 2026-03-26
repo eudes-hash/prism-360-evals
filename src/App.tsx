@@ -78,6 +78,11 @@ function App() {
 
   const [isMenuMinimized, setIsMenuMinimized] = useState(true)
 
+  useEffect(() => {
+    const t = setTimeout(() => window.dispatchEvent(new Event('resize')), 320)
+    return () => clearTimeout(t)
+  }, [isMenuMinimized])
+
   const [isPlaying, setIsPlaying] = useState(true)
   const [videoProgress, setVideoProgress] = useState(0)
   const [videoDuration, setVideoDuration] = useState(0)
@@ -102,7 +107,7 @@ function App() {
   const extractedTaskId = ''
   const taskIdCheckMessage = ''
   const taskIdCopyMessage = ''
-
+  
   const viewerRef = useRef<ViewerRef>(null)
   const tourDriverRef = useRef<ReturnType<typeof driver> | null>(null)
 
@@ -141,9 +146,9 @@ function App() {
     e.preventDefault()
     const file = e.dataTransfer.files?.[0]
     if (!file) return
-    if (file.type.startsWith('image/') || file.type.startsWith('video/')) {
-      const url = URL.createObjectURL(file)
-      setMediaType(file.type.startsWith('video/') ? 'video' : 'image')
+      if (file.type.startsWith('image/') || file.type.startsWith('video/')) {
+        const url = URL.createObjectURL(file)
+        setMediaType(file.type.startsWith('video/') ? 'video' : 'image')
       setMediaUrl((prev) => { if (prev?.startsWith('blob:')) URL.revokeObjectURL(prev); return url })
     }
   }, [])
@@ -255,33 +260,33 @@ function App() {
       <label
         style={{ cursor: 'pointer', background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)', padding: '10px', borderRadius: 8, fontSize: 12, fontWeight: 600, textAlign: 'center', display: 'block', border: '1px solid rgba(255,255,255,0.1)' }}
       >
-        Upload Image / Video
-        <input
-          type="file"
-          accept="image/*,video/*"
-          style={{ display: 'none' }}
-          onChange={(e) => {
+              Upload Image / Video
+              <input 
+                type="file" 
+                accept="image/*,video/*" 
+                style={{ display: 'none' }}
+                onChange={(e) => {
             const file = e.target.files?.[0]
             if (!file) return
-            const url = URL.createObjectURL(file)
-            setMediaType(file.type.startsWith('video/') ? 'video' : 'image')
+                    const url = URL.createObjectURL(file)
+                    setMediaType(file.type.startsWith('video/') ? 'video' : 'image')
             setMediaUrl((prev) => { if (prev?.startsWith('blob:')) URL.revokeObjectURL(prev); return url })
-          }}
-        />
-      </label>
+                }}
+              />
+            </label>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         <label style={{ fontSize: 10, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Video</label>
-        <select
+              <select 
           onChange={(e) => { if (e.target.value) { setMediaType('video'); setMediaUrl(e.target.value) } }}
-          value={mediaType === 'video' ? (mediaUrl || '') : ''}
+                value={mediaType === 'video' ? (mediaUrl || '') : ''}
           style={{ background: 'rgba(0,0,0,0.3)', color: '#f1f5f9', borderRadius: 6, border: '1px solid rgba(255,255,255,0.1)', padding: '8px 10px', fontSize: 12, outline: 'none', width: '100%' }}
         >
           <option value="" disabled>Select video...</option>
           {SAMPLE_VIDEOS.map((vid) => <option key={vid.url} value={vid.url}>{vid.name}</option>)}
-        </select>
-      </div>
+              </select>
+            </div>
       <div style={{ height: 1, background: 'rgba(255,255,255,0.08)', margin: '4px 0' }} />
-    </div>
+                    </div>
   )
 
   return (
@@ -310,18 +315,18 @@ function App() {
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', position: 'relative', overflow: 'hidden' }}>
         <div data-tour="viewer-area" style={{ flex: 1, position: 'relative' }}>
           <ErrorBoundary>
-            <Viewer
-              ref={viewerRef}
-              mediaUrl={mediaUrl}
-              mediaType={mediaType}
-              showGrid={showGrid}
-              viewMode={viewMode}
-              showSinusoidalGrid={showSinusoidalGrid}
-              gridRotation={gridRotation}
-              gridDensity={gridDensity}
-              sectorOpacity={sectorOpacity}
-              sectorColors={sectorColors}
-              polarColors={polarColors}
+          <Viewer 
+            ref={viewerRef} 
+            mediaUrl={mediaUrl}
+            mediaType={mediaType}
+            showGrid={showGrid} 
+            viewMode={viewMode}
+            showSinusoidalGrid={showSinusoidalGrid}
+            gridRotation={gridRotation}
+            gridDensity={gridDensity}
+            sectorOpacity={sectorOpacity}
+            sectorColors={sectorColors}
+            polarColors={polarColors}
               showCenterGuide={showEventCenterGuide}
             />
           </ErrorBoundary>
@@ -391,9 +396,9 @@ function App() {
           {!taskerEmail && <TaskerAuthModal onSave={saveEmail} />}
         </div>
 
-        {mediaType === 'video' && (
+            {mediaType === 'video' && (
           <div style={{ background: '#0f172a', borderTop: '1px solid rgba(255,255,255,0.1)', padding: '16px 24px', zIndex: 20, display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                 <button onClick={handleTogglePlay} style={{ background: isPlaying ? 'rgba(255,255,255,0.2)' : '#3b82f6', border: 'none', borderRadius: '50%', width: 40, height: 40, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', transition: 'all 0.2s' }}>
                   {isPlaying
                     ? <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
@@ -426,12 +431,12 @@ function App() {
                       <input type="range" min="0" max={videoDuration || 100} step="0.1" value={videoProgress} onChange={handleSeek}
                         style={{ position: 'absolute', left: 0, right: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer', margin: 0, padding: 0 }} />
                       <div style={{ position: 'absolute', left: `${videoDuration ? (videoProgress / videoDuration) * 100 : 0}%`, transform: 'translateX(-50%)', width: 14, height: 14, borderRadius: '50%', background: '#fff', boxShadow: '0 0 0 2px #3b82f6', pointerEvents: 'none', transition: 'left 0.1s linear' }} />
-                    </div>
+                </div>
                     {hoveredTimelineEvent && (
                       <div style={{ position: 'absolute', left: `${hoveredTimelineEvent.startPercent}%`, bottom: 34, transform: 'translateX(-50%)', background: 'rgba(2,6,23,0.94)', border: '1px solid rgba(148,163,184,0.35)', borderRadius: 6, padding: '3px 6px', minWidth: 90, maxWidth: 160, color: '#e2e8f0', fontSize: 10, lineHeight: 1.15, zIndex: 3, pointerEvents: 'none' }}>
                         <div style={{ fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textTransform: 'capitalize' }}>{hoveredTimelineEvent.type.replace('_', ' ')}</div>
-                      </div>
-                    )}
+              </div>
+            )}
                   </div>
                 </div>
               </div>
