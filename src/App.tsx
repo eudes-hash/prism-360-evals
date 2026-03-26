@@ -416,7 +416,8 @@ function App() {
             onDeleteEvent={handleDeleteTaggedEvent}
           />
 
-          <TaxonomyDrawer
+          {/* TAXONOMY FORM — temporarily hidden, set SHOW_TAXONOMY_FORM = true to re-enable */}
+          {false && <TaxonomyDrawer
             externalRealisticScene={realisticScene}
             onExternalRealisticSceneChange={setRealisticScene}
             getCurrentVideoSecond={getCurrentVideoSecond}
@@ -439,7 +440,7 @@ function App() {
             prefillDraft={currentPrefill}
             clearEvalResult={clearResult}
             submitTaskTime={submitTaskTime}
-          />
+          />}
 
           {viewMode === 'spherical' && (
             <div style={{ position: 'absolute', right: 20, bottom: 20, zIndex: 35, display: 'flex', gap: 8, pointerEvents: 'auto' }}>
