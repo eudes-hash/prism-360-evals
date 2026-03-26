@@ -42,7 +42,16 @@ function App() {
     { name: 'dd156928...', url: '/360_images/dd156928-99d4-409b-8fe6-5b5e01468487.png' },
   ]
 
-  const SAMPLE_VIDEOS: { name: string; url: string }[] = []
+  const SAMPLE_VIDEOS = [
+    { name: 'e8347f4c...', url: '/360_videos/e8347f4c-10c4-4699-86ee-b0d841299174.mp4' },
+    { name: '11bdd45e...', url: '/360_videos/11bdd45e-5276-4f9c-9e50-e2cd5b4c59ae.mp4' },
+    { name: '98f05e48...', url: '/360_videos/98f05e48-0c4b-4a97-858e-55ba75be6336.mp4' },
+    { name: '3f59fb4a...', url: '/360_videos/3f59fb4a-df51-4104-8ce0-a87305b0334b.mp4' },
+    { name: '7d64f729...', url: '/360_videos/7d64f729-3efb-4cdd-a374-684ddde7d51a.mp4' },
+    { name: '2512f5ec...', url: '/360_videos/2512f5ec-c51f-4e1d-8c8a-be05193dc2f9.mp4' },
+    { name: 'dd156928...', url: '/360_videos/dd156928-99d4-409b-8fe6-5b5e01468487.mp4' },
+    { name: '4f3e8ff0...', url: '/360_videos/4f3e8ff0-436e-4252-aacf-ecdc5050d1c4.mp4' },
+  ]
   const [viewMode, setViewMode] = useState<ViewMode>('spherical')
   const [issues, setIssues] = useState<Issue[]>([])
   const [isLogging, setIsLogging] = useState(false)
