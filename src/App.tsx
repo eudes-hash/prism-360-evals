@@ -297,9 +297,6 @@ function App() {
       onDragOver={handleDragOver}
     >
       <Sidebar
-        isMenuMinimized={false}
-        onToggleMinimized={() => {}}
-        onInteract={() => {}}
         viewMode={viewMode} onViewModeChange={handleViewModeChange}
         showGrid={showGrid} onToggleGrid={() => setShowGrid((v) => !v)}
         sectorOpacity={sectorOpacity} onSectorOpacityChange={setSectorOpacity}
