@@ -50,11 +50,13 @@ interface ViewerProps {
     top: string
     bottom: string
   }
+  showCenterGuide?: boolean
 }
 
 export interface ViewerRef {
   getCameraState: () => { position: THREE.Vector3; target: THREE.Vector3; fov: number }
   setCameraState: (state: { position: THREE.Vector3; target: THREE.Vector3; fov: number }) => void
+  getCenterCoordinate: () => { lat: number; lon: number } | null
   adjustSphericalZoom: (deltaFov: number) => void
   togglePlay: () => void
   setVideoTime: (time: number) => void
@@ -528,6 +530,14 @@ const CameraController = forwardRef<ViewerRef, { viewMode: ViewMode, videoRef: R
         controlsRef.current.update()
       }
     },
+    getCenterCoordinate: () => {
+      const dir = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion)
+      const normalized = dir.clone().normalize()
+      const lat = THREE.MathUtils.radToDeg(Math.asin(THREE.MathUtils.clamp(normalized.y, -1, 1)))
+      const sceneLon = THREE.MathUtils.radToDeg(Math.atan2(normalized.x, -normalized.z))
+      const lon = normalizeLongitudeDeg(sceneLon - LONGITUDE_REFERENCE_OFFSET_DEG)
+      return { lat, lon }
+    },
     adjustSphericalZoom: (deltaFov) => {
       if (props.viewMode !== 'spherical') return
       if (!(camera instanceof THREE.PerspectiveCamera)) return
@@ -702,6 +712,7 @@ const Viewer = forwardRef<ViewerRef, ViewerProps>(({
   sectorOpacity,
   sectorColors,
   polarColors,
+  showCenterGuide,
 }, ref) => {
   const [texture, setTexture] = useState<THREE.Texture | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
@@ -889,6 +900,24 @@ const Viewer = forwardRef<ViewerRef, ViewerProps>(({
         </Canvas>
       )}
       {coordinatePanel}
+      {showCenterGuide && viewMode === 'spherical' && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            pointerEvents: 'none',
+            zIndex: 50,
+          }}
+        >
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+            <line x1="16" y1="2" x2="16" y2="30" stroke="rgba(255,255,255,0.85)" strokeWidth="1.5" strokeDasharray="3 2" />
+            <line x1="2" y1="16" x2="30" y2="16" stroke="rgba(255,255,255,0.85)" strokeWidth="1.5" strokeDasharray="3 2" />
+            <circle cx="16" cy="16" r="4" stroke="rgba(255,255,255,0.9)" strokeWidth="1.5" fill="none" />
+          </svg>
+        </div>
+      )}
       {!mediaUrl && (
         <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
           <p style={{ color: '#b6b6b6', fontSize: 18 }}>Drag & Drop an equirectangular image/video here</p>
