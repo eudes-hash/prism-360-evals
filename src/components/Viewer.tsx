@@ -570,7 +570,8 @@ const CameraController = forwardRef<ViewerRef, { viewMode: ViewMode, videoRef: R
         }
       }
       return { isPlaying: false, currentTime: 0, duration: 0 }
-    }
+    },
+    getHoveredCoordinate: () => null,
   }))
 
   return (
