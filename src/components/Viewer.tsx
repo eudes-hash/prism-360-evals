@@ -827,6 +827,31 @@ const Viewer = forwardRef<ViewerRef, ViewerProps>(({
     }
   }, [mediaUrl, mediaType])
 
+  // Force resize when layout changes (sidebar, window resize, etc.)
+  useEffect(() => {
+    const handleResize = () => {
+      if (viewerHandleRef && 'current' in viewerHandleRef && viewerHandleRef.current) {
+        // Force Three.js to update canvas size
+        const canvas = document.querySelector('canvas')
+        if (canvas) {
+          const rect = canvas.getBoundingClientRect()
+          if (rect.width > 0 && rect.height > 0) {
+            console.log('🔄 Forcing canvas resize to:', rect.width, 'x', rect.height)
+          }
+        }
+      }
+    }
+
+    window.addEventListener('resize', handleResize)
+    // Also trigger on mount and when media changes
+    const timeout = setTimeout(handleResize, 100)
+
+    return () => {
+      window.removeEventListener('resize', handleResize)
+      clearTimeout(timeout)
+    }
+  }, [mediaUrl, mediaType, viewMode])
+
   const coordinatePanel = hoveredCoords ? (
     <div style={{
       position: 'absolute',
