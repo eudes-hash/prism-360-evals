@@ -791,6 +791,7 @@ const Viewer = forwardRef<ViewerRef, ViewerProps>(({
       loader.load(
         mediaUrl,
         (loadedTexture) => {
+          console.log('✅ Image loaded successfully:', mediaUrl)
           if (isCancelled) {
             loadedTexture.dispose()
             return
@@ -802,10 +803,11 @@ const Viewer = forwardRef<ViewerRef, ViewerProps>(({
           setLoadError(null)
         },
         undefined,
-        () => {
+        (error) => {
+          console.error('❌ Failed to load image:', mediaUrl, error)
           if (!isCancelled) {
             setTexture(null)
-            setLoadError('No se pudo cargar la imagen. Prueba otro JPG/PNG.')
+            setLoadError(`No se pudo cargar la imagen: ${mediaUrl?.split('/').pop() || 'desconocida'}. Verifica que el archivo exista.`)
           }
         }
       )
