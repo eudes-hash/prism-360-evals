@@ -314,6 +314,7 @@ function App() {
               setMediaUrl(e.target.value);
               setViewMode('equirectangular');
               setShowGrid(true);
+              setShowSinusoidalGrid(true);
             } 
           }}
                 value={mediaType === 'image' ? (mediaUrl || '') : ''}
