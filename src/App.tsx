@@ -308,7 +308,14 @@ function App() {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         <label style={{ fontSize: 10, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Image</label>
               <select 
-          onChange={(e) => { if (e.target.value) { setMediaType('image'); setMediaUrl(e.target.value) } }}
+          onChange={(e) => { 
+            if (e.target.value) { 
+              setMediaType('image'); 
+              setMediaUrl(e.target.value);
+              setViewMode('equirectangular');
+              setShowGrid(true);
+            } 
+          }}
                 value={mediaType === 'image' ? (mediaUrl || '') : ''}
           style={{ background: 'rgba(0,0,0,0.3)', color: '#f1f5f9', borderRadius: 6, border: '1px solid rgba(255,255,255,0.1)', padding: '8px 10px', fontSize: 12, outline: 'none', width: '100%' }}
         >
