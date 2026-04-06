@@ -39,9 +39,9 @@ interface TaxonomyTourCommand {
 
 
 const SAMPLE_VIDEOS = [
-  { name: 'Creación y Evaluación de Video', url: '/360_videos/Creación_y_Evaluación_de_Video_.mp4' },
-  { name: 'Persona Caminando (Equirectangular)', url: '/360_videos/Video_Equirectangular_de_Persona_Caminando.mp4' },
-  { name: 'Video Generation with Added Objects', url: '/360_videos/Video_Generation_with_Added_Objects.mp4' },
+  { name: 'Video Creation & Evaluation', url: '/360_videos/creacion-evaluacion-video.mp4' },
+  { name: 'Person Walking (Equirectangular)', url: '/360_videos/persona-caminando-equirectangular.mp4' },
+  { name: 'Video Generation with Added Objects', url: '/360_videos/video-generation-added-objects.mp4' },
 ]
 
 function App() {
@@ -50,7 +50,7 @@ function App() {
     clearResult, isBlocked, taskerEmail, saveEmail, clearEmail, submitTaskTime
   } = useEvalSystem()
 
-  const [mediaUrl, setMediaUrl] = useState<string | null>('/360_videos/Creación_y_Evaluación_de_Video_.mp4')
+  const [mediaUrl, setMediaUrl] = useState<string | null>('/360_videos/creacion-evaluacion-video.mp4')
   const [mediaType, setMediaType] = useState<'image' | 'video'>('video')
 
   const [showGrid, setShowGrid] = useState(true)
