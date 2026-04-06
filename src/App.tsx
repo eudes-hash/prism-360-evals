@@ -435,7 +435,7 @@ function App() {
           {!taskerEmail && <TaskerAuthModal onSave={saveEmail} />}
         </div>
 
-            {mediaType === 'video' && (
+            {(mediaType === 'video' || mediaUrl?.includes('.mp4')) && (
           <div style={{ background: '#0f172a', borderTop: '1px solid rgba(255,255,255,0.1)', padding: '16px 24px', zIndex: 20, display: 'flex', flexDirection: 'column', gap: 16 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                 <button onClick={handleTogglePlay} style={{ background: isPlaying ? 'rgba(255,255,255,0.2)' : '#3b82f6', border: 'none', borderRadius: '50%', width: 40, height: 40, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', transition: 'all 0.2s' }}>
