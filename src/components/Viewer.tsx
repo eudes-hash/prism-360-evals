@@ -827,24 +827,23 @@ const Viewer = forwardRef<ViewerRef, ViewerProps>(({
     }
   }, [mediaUrl, mediaType])
 
-  // Force resize when layout changes (sidebar, window resize, etc.)
+  // Force canvas resize when layout changes (fixes image not showing in Flat mode)
   useEffect(() => {
     const handleResize = () => {
-      if (viewerHandleRef && 'current' in viewerHandleRef && viewerHandleRef.current) {
-        // Force Three.js to update canvas size
-        const canvas = document.querySelector('canvas')
-        if (canvas) {
-          const rect = canvas.getBoundingClientRect()
-          if (rect.width > 0 && rect.height > 0) {
-            console.log('🔄 Forcing canvas resize to:', rect.width, 'x', rect.height)
-          }
+      const canvas = document.querySelector('canvas')
+      if (canvas) {
+        const rect = canvas.getBoundingClientRect()
+        if (rect.width > 0 && rect.height > 0) {
+          console.log('🔄 Canvas resized to:', Math.round(rect.width), 'x', Math.round(rect.height))
+          // Force Three.js to update
+          window.dispatchEvent(new Event('resize'))
         }
       }
     }
 
     window.addEventListener('resize', handleResize)
-    // Also trigger on mount and when media changes
-    const timeout = setTimeout(handleResize, 100)
+    // Trigger resize after media loads
+    const timeout = setTimeout(handleResize, 150)
 
     return () => {
       window.removeEventListener('resize', handleResize)
