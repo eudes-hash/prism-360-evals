@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import ReactDOM from 'react-dom/client';
-import proposalContent from '../../proposal.md?raw';
+import { createPortal } from 'react-dom';
 
 interface ProposalModalProps {}
 
@@ -330,7 +329,7 @@ Expected AI Response includes exact spherical coordinates and angular displaceme
   return (
     <>
       {triggerButton}
-      {isOpen && ReactDOM.createPortal(modalContent, document.body)}
+      {isOpen && createPortal(modalContent, document.body)}
     </>
   );
 };
