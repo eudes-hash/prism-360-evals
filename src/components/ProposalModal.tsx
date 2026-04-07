@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import ReactDOM from 'react-dom/client';
+import { createPortal } from 'react-dom';
 
 interface ProposalModalProps {
   isOpen: boolean;
@@ -7,7 +7,6 @@ interface ProposalModalProps {
 }
 
 const ProposalModal: React.FC<ProposalModalProps> = ({ isOpen, onClose }) => {
-  const [isOpen, setIsOpen] = useState(false);
   const [currentSection, setCurrentSection] = useState(0);
 
   const sections = [
@@ -296,7 +295,7 @@ Expected AI Response includes exact spherical coordinates and angular displaceme
 
   // No floating button - will be placed in Sidebar instead
 
-  return isOpen ? ReactDOM.createPortal(modalContent, document.body as HTMLElement) : null;
+  return isOpen ? createPortal(modalContent, document.body) : null;
 };
 
 export default ProposalModal;
