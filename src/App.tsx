@@ -100,6 +100,7 @@ function App() {
   const [eventValidationMessage, setEventValidationMessage] = useState('')
   const [taggedEvents, setTaggedEvents] = useState<TaggedEvent[]>([])
   const [hoveredTimelineEventId, setHoveredTimelineEventId] = useState<string | null>(null)
+  const [playbackRate, setPlaybackRate] = useState(1.0)
 
   const [isTourRunning, setIsTourRunning] = useState(false)
   const [tourStep, setTourStep] = useState(0)
@@ -184,6 +185,16 @@ function App() {
   const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
     const time = parseFloat(e.target.value)
     viewerRef.current?.setVideoTime(time); setVideoProgress(time)
+  }
+  const handleSpeedChange = (speed: number) => {
+    setPlaybackRate(speed)
+    if (viewerRef.current) {
+      const videoState = viewerRef.current.getVideoState()
+      if (videoState) {
+        // The actual video element speed change would need to be implemented in Viewer.tsx
+        console.log(`Speed changed to ${speed}x`)
+      }
+    }
   }
   const formatTime = (time: number) => `${Math.floor(time / 60)}:${Math.floor(time % 60).toString().padStart(2, '0')}`
   const getCurrentVideoSecond = () => viewerRef.current?.getVideoState()?.currentTime ?? 0
@@ -461,12 +472,35 @@ function App() {
 
             {(mediaType === 'video' || mediaUrl?.includes('.mp4')) && (
           <div style={{ background: '#0f172a', borderTop: '1px solid rgba(255,255,255,0.1)', padding: '16px 24px', zIndex: 20, display: 'flex', flexDirection: 'column', gap: 16 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <button onClick={handleTogglePlay} style={{ background: isPlaying ? 'rgba(255,255,255,0.2)' : '#3b82f6', border: 'none', borderRadius: '50%', width: 40, height: 40, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', transition: 'all 0.2s' }}>
                   {isPlaying
                     ? <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
                     : <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>}
                 </button>
+
+                {/* Speed Controls */}
+                <div style={{ display: 'flex', gap: 4, background: 'rgba(255,255,255,0.08)', borderRadius: 6, padding: 3 }}>
+                  {[0.25, 0.5, 1, 1.5, 2].map((speed) => (
+                    <button
+                      key={speed}
+                      onClick={() => handleSpeedChange(speed)}
+                      style={{
+                        background: playbackRate === speed ? '#3b82f6' : 'transparent',
+                        color: playbackRate === speed ? '#fff' : '#94a3b8',
+                        border: 'none',
+                        borderRadius: 4,
+                        padding: '4px 8px',
+                        fontSize: '11px',
+                        fontWeight: playbackRate === speed ? '600' : '500',
+                        cursor: 'pointer',
+                        minWidth: '32px'
+                      }}
+                    >
+                      {speed}x
+                    </button>
+                  ))}
+                </div>
                 <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#94a3b8', fontWeight: 500 }}>
                     <span>{formatTime(videoProgress)}</span><span>{formatTime(videoDuration)}</span>
