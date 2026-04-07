@@ -38,10 +38,24 @@ interface TaxonomyTourCommand {
 }
 
 
-const SAMPLE_VIDEOS = [
-  { name: 'Video Creation & Evaluation', url: '/360_videos/creacion-evaluacion-video.mp4' },
-  { name: 'Person Walking (Equirectangular)', url: '/360_videos/persona-caminando-equirectangular.mp4' },
-  { name: 'Video Generation with Added Objects', url: '/360_videos/video-generation-added-objects.mp4' },
+const GROUP1_VIDEOS = [
+  { name: 'Video Creation & Evaluation', url: '/360_videos/gemini/creacion-evaluacion-video.mp4' },
+  { name: 'Person Walking (Equirectangular)', url: '/360_videos/gemini/persona-caminando-equirectangular.mp4' },
+  { name: 'Video Generation with Added Objects', url: '/360_videos/gemini/video-generation-added-objects.mp4' },
+  { name: 'Interactive Video Creation', url: '/360_videos/gemini/Creación_de_Video_Interactivo.mp4' },
+  { name: 'Walmart Style Video', url: '/360_videos/gemini/Generar_Video_Tipo_Wallmart.mp4' },
+  { name: 'House Hall Generation', url: '/360_videos/gemini/Generar_Video_de_Hall_de_Casa.mp4' },
+]
+
+const GROUP2_VIDEOS = [
+  { name: 'Doorbell Scene', url: '/360_videos/lasted/11bdd45e-5276-4f9c-9e50-e2cd5b4c59ae.mp4' },
+  { name: 'Mobile & Rocking Chair', url: '/360_videos/lasted/2512f5ec-c51f-4e1d-8c8a-be05193dc2f9.mp4' },
+  { name: 'Shredder Scene', url: '/360_videos/lasted/3f59fb4a-df51-4104-8ce0-a87305b0334b.mp4' },
+  { name: 'Office Scene', url: '/360_videos/lasted/4f3e8ff0-436e-4252-aacf-ecdc5050d1c4.mp4' },
+  { name: 'Kitchen Scene', url: '/360_videos/lasted/7d64f729-3efb-4cdd-a374-684ddde7d51a.mp4' },
+  { name: 'Living Room Scene', url: '/360_videos/lasted/98f05e48-0c4b-4a97-858e-55ba75be6336.mp4' },
+  { name: 'Workshop Scene', url: '/360_videos/lasted/dd156928-99d4-409b-8fe6-5b5e01468487.mp4' },
+  { name: 'Bedroom Scene', url: '/360_videos/lasted/e8347f4c-10c4-4699-86ee-b0d841299174.mp4' },
 ]
 
 const SAMPLE_IMAGES = [
@@ -54,7 +68,7 @@ function App() {
     clearResult, isBlocked, taskerEmail, saveEmail, clearEmail, submitTaskTime
   } = useEvalSystem()
 
-  const [mediaUrl, setMediaUrl] = useState<string | null>('/360_videos/creacion-evaluacion-video.mp4')
+  const [mediaUrl, setMediaUrl] = useState<string | null>('/360_videos/gemini/creacion-evaluacion-video.mp4')
   const [mediaType, setMediaType] = useState<'image' | 'video'>('video')
 
   const [showGrid, setShowGrid] = useState(true)
@@ -300,8 +314,17 @@ function App() {
                 value={mediaType === 'video' ? (mediaUrl || '') : ''}
           style={{ background: 'rgba(0,0,0,0.3)', color: '#f1f5f9', borderRadius: 6, border: '1px solid rgba(255,255,255,0.1)', padding: '8px 10px', fontSize: 12, outline: 'none', width: '100%' }}
         >
-          <option value="" disabled>Select video...</option>
-          {SAMPLE_VIDEOS.map((vid) => <option key={vid.url} value={vid.url}>{vid.name}</option>)}
+          <option value="" disabled>Select video group...</option>
+          <optgroup label="Group 1 — Gemini Generated">
+            {GROUP1_VIDEOS.map((vid) => (
+              <option key={vid.url} value={vid.url}>{vid.name}</option>
+            ))}
+          </optgroup>
+          <optgroup label="Group 2 — Lasted Videos">
+            {GROUP2_VIDEOS.map((vid) => (
+              <option key={vid.url} value={vid.url}>{vid.name}</option>
+            ))}
+          </optgroup>
               </select>
             </div>
 
