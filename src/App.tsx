@@ -101,6 +101,7 @@ function App() {
   const [taggedEvents, setTaggedEvents] = useState<TaggedEvent[]>([])
   const [hoveredTimelineEventId, setHoveredTimelineEventId] = useState<string | null>(null)
   const [playbackRate, setPlaybackRate] = useState(1.0)
+  const [showProposalModal, setShowProposalModal] = useState(false)
 
   const [isTourRunning, setIsTourRunning] = useState(false)
   const [tourStep, setTourStep] = useState(0)
@@ -195,6 +196,10 @@ function App() {
         console.log(`Speed changed to ${speed}x`)
       }
     }
+  }
+
+  const handleToggleProposalModal = () => {
+    setShowProposalModal(!showProposalModal)
   }
   const formatTime = (time: number) => `${Math.floor(time / 60)}:${Math.floor(time % 60).toString().padStart(2, '0')}`
   const getCurrentVideoSecond = () => viewerRef.current?.getVideoState()?.currentTime ?? 0
@@ -381,6 +386,7 @@ function App() {
         issueCount={issues.length} onExportIssues={exportIssues}
         isTourRunning={isTourRunning} tourStep={tourStep} tourDemoMode={tourDemoMode} onStartGuideTour={startGuideTour}
         taskerEmail={taskerEmail} onClearEmail={clearEmail}
+        showProposalModal={showProposalModal} onToggleProposalModal={handleToggleProposalModal}
         topSection={mediaSection}
       />
 
@@ -465,6 +471,11 @@ function App() {
             onSave={saveIssue}
             issues={issues}
             onRestoreView={restoreView}
+          />
+
+          <ProposalModal
+            isOpen={showProposalModal}
+            onClose={() => setShowProposalModal(false)}
           />
 
           {!taskerEmail && <TaskerAuthModal onSave={saveEmail} />}

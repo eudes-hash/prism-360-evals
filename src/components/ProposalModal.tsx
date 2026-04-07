@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { createPortal } from 'react-dom';
+import ReactDOM from 'react-dom/client';
 
-interface ProposalModalProps {}
+interface ProposalModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
 
-const ProposalModal: React.FC<ProposalModalProps> = () => {
+const ProposalModal: React.FC<ProposalModalProps> = ({ isOpen, onClose }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [currentSection, setCurrentSection] = useState(0);
 
@@ -73,17 +76,21 @@ Expected AI Response includes exact spherical coordinates and angular displaceme
   const handleKeyDown = (e: KeyboardEvent) => {
     if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'p') {
       e.preventDefault();
-      setIsOpen(!isOpen);
+      if (isOpen) {
+        onClose();
+      } else {
+        // This will be handled by parent
+      }
     }
     if (e.key === 'Escape' && isOpen) {
-      setIsOpen(false);
+      onClose();
     }
   };
 
   useEffect(() => {
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen]);
+  }, [isOpen, onClose]);
 
   const closeModal = () => setIsOpen(false);
   const nextSection = () => setCurrentSection((prev) => (prev + 1) % sections.length);
@@ -287,51 +294,9 @@ Expected AI Response includes exact spherical coordinates and angular displaceme
     </div>
   );
 
-  // Floating trigger button (always visible)
-  const triggerButton = (
-    <button
-      onClick={() => setIsOpen(true)}
-      style={{
-        position: 'fixed',
-        bottom: 24,
-        right: 24,
-        background: 'rgba(15, 23, 42, 0.95)',
-        color: '#e0f2fe',
-        border: '1px solid rgba(59, 130, 246, 0.3)',
-        borderRadius: 999,
-        padding: '10px 20px',
-        fontSize: 13,
-        fontWeight: 600,
-        cursor: 'pointer',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 8,
-        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.3)',
-        zIndex: 2147483646,
-        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-        backdropFilter: 'blur(12px)'
-      }}
-      onMouseOver={(e) => {
-        e.currentTarget.style.background = 'rgba(59, 130, 246, 0.95)';
-        e.currentTarget.style.transform = 'translateY(-1px)';
-      }}
-      onMouseOut={(e) => {
-        e.currentTarget.style.background = 'rgba(15, 23, 42, 0.95)';
-        e.currentTarget.style.transform = 'translateY(0)';
-      }}
-    >
-      <span>📋</span>
-      <span>Proposal</span>
-      <span style={{ fontSize: 10, opacity: 0.6 }}>(⇧⌘P)</span>
-    </button>
-  );
+  // No floating button - will be placed in Sidebar instead
 
-  return (
-    <>
-      {triggerButton}
-      {isOpen && createPortal(modalContent, document.body)}
-    </>
-  );
+  return isOpen ? ReactDOM.createPortal(modalContent, document.body as HTMLElement) : null;
 };
 
 export default ProposalModal;

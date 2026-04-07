@@ -29,6 +29,8 @@ interface SidebarProps {
   onStartGuideTour: () => void
   taskerEmail: string
   onClearEmail: () => void
+  showProposalModal: boolean
+  onToggleProposalModal: () => void
   topSection?: ReactNode
 }
 
@@ -44,6 +46,7 @@ function Sidebar({
   issueCount, onExportIssues,
   isTourRunning, tourStep, tourDemoMode, onStartGuideTour,
   taskerEmail, onClearEmail,
+  showProposalModal, onToggleProposalModal,
   topSection,
 }: SidebarProps) {
   return (
@@ -56,6 +59,38 @@ function Sidebar({
         </div>
 
         {topSection}
+
+        {/* Proposal Button */}
+        <button
+          onClick={onToggleProposalModal}
+          style={{
+            background: showProposalModal ? 'rgba(59, 130, 246, 0.15)' : 'rgba(255,255,255,0.06)',
+            color: showProposalModal ? '#60a5fa' : '#e2e8f0',
+            border: showProposalModal ? '1px solid rgba(59, 130, 246, 0.4)' : '1px solid rgba(255,255,255,0.1)',
+            padding: '10px 14px',
+            borderRadius: 8,
+            fontSize: 13,
+            fontWeight: 600,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            transition: 'all 0.2s',
+            width: '100%'
+          }}
+          onMouseOver={(e) => {
+            if (!showProposalModal) {
+              e.currentTarget.style.background = 'rgba(59, 130, 246, 0.1)';
+            }
+          }}
+          onMouseOut={(e) => {
+            if (!showProposalModal) {
+              e.currentTarget.style.background = 'rgba(255,255,255,0.06)';
+            }
+          }}
+        >
+          📋 Proposal
+        </button>
 
         <div data-tour="view-mode" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <label style={{ fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>View Mode</label>
