@@ -42,9 +42,9 @@ const GROUP1_VIDEOS = [
   { name: 'Video Creation & Evaluation', url: '/360_videos/gemini/creacion-evaluacion-video.mp4' },
   { name: 'Person Walking (Equirectangular)', url: '/360_videos/gemini/persona-caminando-equirectangular.mp4' },
   { name: 'Video Generation with Added Objects', url: '/360_videos/gemini/video-generation-added-objects.mp4' },
-  { name: 'Interactive Video Creation', url: '/360_videos/gemini/Creación_de_Video_Interactivo.mp4' },
-  { name: 'Walmart Style Video', url: '/360_videos/gemini/Generar_Video_Tipo_Wallmart.mp4' },
-  { name: 'House Hall Generation', url: '/360_videos/gemini/Generar_Video_de_Hall_de_Casa.mp4' },
+  { name: 'Interactive Video Creation', url: '/360_videos/gemini/creacion-video-interactivo.mp4' },
+  { name: 'Walmart Style Video', url: '/360_videos/gemini/generar-video-walmart.mp4' },
+  { name: 'House Hall Generation', url: '/360_videos/gemini/generar-video-hall-casa.mp4' },
 ]
 
 const GROUP2_VIDEOS = [
