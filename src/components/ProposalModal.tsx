@@ -91,7 +91,7 @@ Expected AI Response includes exact spherical coordinates and angular displaceme
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
-  const closeModal = () => setIsOpen(false);
+  const closeModal = onClose;
   const nextSection = () => setCurrentSection((prev) => (prev + 1) % sections.length);
   const prevSection = () => setCurrentSection((prev) => (prev - 1 + sections.length) % sections.length);
 
