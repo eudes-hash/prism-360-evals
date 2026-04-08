@@ -508,7 +508,7 @@ const CameraController = forwardRef<ViewerRef, { viewMode: ViewMode, videoRef: R
         return {
           position: camera.position.clone(),
           target: controlsRef.current.target.clone(),
-          fov: (camera as THREE.PerspectiveCamera).fov
+          fov: (camera as THREE.PerspectiveCamera).fov || 75
         }
       }
       return {
@@ -778,15 +778,18 @@ const Viewer = forwardRef<ViewerRef, ViewerProps>(({
 
     return () => {
       isCancelled = true
-      setTexture((prev) => {
-        if (prev) prev.dispose()
-        return null
-      })
       if (videoEl) {
         videoEl.pause()
         videoEl.src = ''
+        videoEl.load()
       }
       videoRef.current = null
+      setTexture((prev) => {
+        if (prev) {
+          prev.dispose()
+        }
+        return null
+      })
     }
   }, [mediaUrl, mediaType])
 
