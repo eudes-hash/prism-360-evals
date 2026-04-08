@@ -50,14 +50,11 @@ interface ViewerProps {
     top: string
     bottom: string
   }
-  showCenterGuide?: boolean
 }
 
 export interface ViewerRef {
   getCameraState: () => { position: THREE.Vector3; target: THREE.Vector3; fov: number }
   setCameraState: (state: { position: THREE.Vector3; target: THREE.Vector3; fov: number }) => void
-  getCenterCoordinate: () => { lat: number; lon: number } | null
-  getHoveredCoordinate: () => { lat: number; lon: number } | null
   adjustSphericalZoom: (deltaFov: number) => void
   togglePlay: () => void
   setVideoTime: (time: number) => void
@@ -531,14 +528,6 @@ const CameraController = forwardRef<ViewerRef, { viewMode: ViewMode, videoRef: R
         controlsRef.current.update()
       }
     },
-    getCenterCoordinate: () => {
-      const dir = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion)
-      const normalized = dir.clone().normalize()
-      const lat = THREE.MathUtils.radToDeg(Math.asin(THREE.MathUtils.clamp(normalized.y, -1, 1)))
-      const sceneLon = THREE.MathUtils.radToDeg(Math.atan2(normalized.x, -normalized.z))
-      const lon = normalizeLongitudeDeg(sceneLon - LONGITUDE_REFERENCE_OFFSET_DEG)
-      return { lat, lon }
-    },
     adjustSphericalZoom: (deltaFov) => {
       if (props.viewMode !== 'spherical') return
       if (!(camera instanceof THREE.PerspectiveCamera)) return
@@ -570,8 +559,7 @@ const CameraController = forwardRef<ViewerRef, { viewMode: ViewMode, videoRef: R
         }
       }
       return { isPlaying: false, currentTime: 0, duration: 0 }
-    },
-    getHoveredCoordinate: () => null,
+    }
   }))
 
   return (
@@ -714,34 +702,11 @@ const Viewer = forwardRef<ViewerRef, ViewerProps>(({
   sectorOpacity,
   sectorColors,
   polarColors,
-  showCenterGuide,
 }, ref) => {
   const [texture, setTexture] = useState<THREE.Texture | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
   const videoRef = useRef<HTMLVideoElement | null>(null)
   const [hoveredCoords, setHoveredCoords] = useState<HoveredCoordinate | null>(null)
-  const hoveredCoordsRef = useRef<HoveredCoordinate | null>(null)
-  const cameraInternalRef = useRef<ViewerRef | null>(null)
-
-  useEffect(() => { hoveredCoordsRef.current = hoveredCoords }, [hoveredCoords])
-
-  useImperativeHandle(ref, () => ({
-    getCameraState: () => cameraInternalRef.current?.getCameraState() ?? { position: new THREE.Vector3(0, 0, 0.1), target: new THREE.Vector3(0, 0, -1), fov: 75 },
-    setCameraState: (state) => cameraInternalRef.current?.setCameraState(state),
-    getCenterCoordinate: () => cameraInternalRef.current?.getCenterCoordinate() ?? null,
-    getHoveredCoordinate: () => hoveredCoordsRef.current ? { lat: hoveredCoordsRef.current.lat, lon: hoveredCoordsRef.current.lon } : null,
-    adjustSphericalZoom: (deltaFov) => cameraInternalRef.current?.adjustSphericalZoom(deltaFov),
-    togglePlay: () => {
-      if (videoRef.current) {
-        if (videoRef.current.paused) videoRef.current.play().catch(console.error)
-        else videoRef.current.pause()
-      }
-    },
-    setVideoTime: (time) => { if (videoRef.current) videoRef.current.currentTime = time },
-    getVideoState: () => videoRef.current
-      ? { isPlaying: !videoRef.current.paused, currentTime: videoRef.current.currentTime, duration: videoRef.current.duration || 0 }
-      : { isPlaying: false, currentTime: 0, duration: 0 },
-  }))
 
   useEffect(() => {
     if (!mediaUrl) {
@@ -791,7 +756,6 @@ const Viewer = forwardRef<ViewerRef, ViewerProps>(({
       loader.load(
         mediaUrl,
         (loadedTexture) => {
-          console.log('✅ Image loaded successfully:', mediaUrl)
           if (isCancelled) {
             loadedTexture.dispose()
             return
@@ -803,11 +767,10 @@ const Viewer = forwardRef<ViewerRef, ViewerProps>(({
           setLoadError(null)
         },
         undefined,
-        (error) => {
-          console.error('❌ Failed to load image:', mediaUrl, error)
+        () => {
           if (!isCancelled) {
             setTexture(null)
-            setLoadError(`No se pudo cargar la imagen: ${mediaUrl?.split('/').pop() || 'desconocida'}. Verifica que el archivo exista.`)
+            setLoadError('No se pudo cargar la imagen. Prueba otro JPG/PNG.')
           }
         }
       )
@@ -827,34 +790,10 @@ const Viewer = forwardRef<ViewerRef, ViewerProps>(({
     }
   }, [mediaUrl, mediaType])
 
-  // Force canvas resize when layout changes (fixes image not showing in Flat mode)
-  useEffect(() => {
-    const handleResize = () => {
-      const canvas = document.querySelector('canvas')
-      if (canvas) {
-        const rect = canvas.getBoundingClientRect()
-        if (rect.width > 0 && rect.height > 0) {
-          console.log('🔄 Canvas resized to:', Math.round(rect.width), 'x', Math.round(rect.height))
-          // Force Three.js to update
-          window.dispatchEvent(new Event('resize'))
-        }
-      }
-    }
-
-    window.addEventListener('resize', handleResize)
-    // Trigger resize after media loads
-    const timeout = setTimeout(handleResize, 150)
-
-    return () => {
-      window.removeEventListener('resize', handleResize)
-      clearTimeout(timeout)
-    }
-  }, [mediaUrl, mediaType, viewMode])
-
   const coordinatePanel = hoveredCoords ? (
     <div style={{
       position: 'absolute',
-      bottom: 16,
+      top: 16,
       right: 16,
       background: 'rgba(0, 0, 0, 0.75)',
       color: '#fff',
@@ -889,7 +828,7 @@ const Viewer = forwardRef<ViewerRef, ViewerProps>(({
                     viewMode={viewMode}
                     onHover={setHoveredCoords}
                     hoveredCoords={hoveredCoords}
-                    viewerHandleRef={cameraInternalRef}
+                    viewerHandleRef={ref}
                   />
                 </ErrorBoundary>
               </Suspense>
@@ -942,7 +881,7 @@ const Viewer = forwardRef<ViewerRef, ViewerProps>(({
                   viewMode={viewMode}
                   onHover={setHoveredCoords}
                   hoveredCoords={hoveredCoords}
-                  viewerHandleRef={cameraInternalRef}
+                  viewerHandleRef={ref}
                 />
               )}
             </ErrorBoundary>
@@ -950,42 +889,6 @@ const Viewer = forwardRef<ViewerRef, ViewerProps>(({
         </Canvas>
       )}
       {coordinatePanel}
-      {showCenterGuide && viewMode === 'spherical' && (
-        <div
-          style={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            pointerEvents: 'none',
-            zIndex: 50,
-          }}
-        >
-          <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-            <line x1="16" y1="2" x2="16" y2="30" stroke="rgba(255,255,255,0.85)" strokeWidth="1.5" strokeDasharray="3 2" />
-            <line x1="2" y1="16" x2="30" y2="16" stroke="rgba(255,255,255,0.85)" strokeWidth="1.5" strokeDasharray="3 2" />
-            <circle cx="16" cy="16" r="4" stroke="rgba(255,255,255,0.9)" strokeWidth="1.5" fill="none" />
-          </svg>
-        </div>
-      )}
-      {showCenterGuide && viewMode === 'equirectangular' && hoveredCoords && (
-        <div
-          style={{
-            position: 'absolute',
-            left: `${((hoveredCoords.lon + 180) / 360) * 100}%`,
-            top: `${((90 - hoveredCoords.lat) / 180) * 100}%`,
-            transform: 'translate(-50%, -50%)',
-            pointerEvents: 'none',
-            zIndex: 50,
-          }}
-        >
-          <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-            <line x1="16" y1="2" x2="16" y2="30" stroke="rgba(255,140,0,0.9)" strokeWidth="1.5" strokeDasharray="3 2" />
-            <line x1="2" y1="16" x2="30" y2="16" stroke="rgba(255,140,0,0.9)" strokeWidth="1.5" strokeDasharray="3 2" />
-            <circle cx="16" cy="16" r="4" stroke="rgba(255,140,0,1)" strokeWidth="1.5" fill="none" />
-          </svg>
-        </div>
-      )}
       {!mediaUrl && (
         <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
           <p style={{ color: '#b6b6b6', fontSize: 18 }}>Drag & Drop an equirectangular image/video here</p>
